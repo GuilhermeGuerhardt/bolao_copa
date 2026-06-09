@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Palpites dos Imparáveis | Edição Copa</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script type="importmap">{ "imports": { "vue": "https://unpkg.com/vue@3/dist/vue.esm-browser.prod.js" } }</script>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div id="app" class="min-h-screen pb-10">
+
+    <!-- Cabeçalho -->
+    <header class="sticky top-0 z-20 border-b border-yellow-500/20 backdrop-blur-xl" style="background: rgba(3,12,8,.78)">
+      <div class="max-w-7xl mx-auto px-4 md:px-6 py-4 flex items-center justify-between gap-4">
+        <div class="flex items-center gap-4 min-w-0">
+          <div class="relative shrink-0">
+            <div class="absolute -inset-1 rounded-2xl bg-yellow-400/20 blur-md"></div>
+            <img src="https://s3-sa-east-1.amazonaws.com/projetos-artes/fullsize%2F2019%2F05%2F23%2F11%2FLogo-256995_1874_115641677_488885145.jpg" alt="Logo" class="relative h-14 w-14 md:h-16 md:w-16 rounded-2xl border border-yellow-400/50 object-cover bg-black" />
+          </div>
+          <div class="min-w-0">
+            <p class="text-[11px] md:text-xs font-bold tracking-[0.35em] text-yellow-300 uppercase">Edição Copa</p>
+            <h1 class="text-xl md:text-3xl leading-tight font-bold text-white truncate">Palpites dos Imparáveis</h1>
+            <p class="text-xs md:text-sm subtle-text truncate">Painel local com salvamento automático na sua máquina</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3 shrink-0">
+          <div class="hidden md:flex items-center gap-2 px-3 py-2 rounded-full hero-badge text-xs font-bold">
+            <span>🏆</span>
+            <span>{{ totalFinishedMatches }} jogos encerrados</span>
+          </div>
+          <button @click="toggleAdmin" class="px-4 md:px-6 py-3 rounded-2xl bg-yellow-500 text-black font-black shadow-lg shadow-yellow-600/15 hover:bg-yellow-400 transition">
+            {{ isAdmin ? '📺 Ver transmissão' : '⚙️ Modo admin' }}
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Painel principal -->
+    <section class="max-w-7xl mx-auto px-4 md:px-6 pt-6 md:pt-8">
+      <div class="relative overflow-hidden rounded-[28px] glass card-glow px-5 md:px-8 py-6 md:py-8">
+        <div class="field-line"></div>
+        <div class="relative z-10 grid grid-cols-1 xl:grid-cols-[1.4fr_.8fr] gap-6 items-center">
+          <div>
+            <div class="flex flex-wrap items-center gap-2 mb-4">
+              <span class="chip px-3 py-1 text-xs font-bold text-yellow-300">⚽ Copa vibes</span>
+              <span class="chip px-3 py-1 text-xs font-bold" :class="activeMatch && activeMatch.isFinished ? 'status-live' : 'status-open'">
+                {{ activeMatch && activeMatch.isFinished ? 'Finalizado' : 'Aberto para palpites' }}
+              </span>
+            </div>
+
+            <h2 class="text-3xl md:text-5xl leading-none mb-3">Painel do Bolão</h2>
+            <p class="text-sm md:text-base subtle-text max-w-2xl">
+              Visual de apresentação em clima de copa, mantendo o salvamento local e sem resetar quando você apertar F5.
+            </p>
+
+            <div class="mt-6 grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div class="glass rounded-2xl p-4 border border-white/5">
+                <p class="text-[11px] uppercase tracking-[0.2em] text-gray-400">Participantes</p>
+                <p class="text-2xl font-black mt-1">{{ participants.length }}</p>
+              </div>
+              <div class="glass rounded-2xl p-4 border border-white/5">
+                <p class="text-[11px] uppercase tracking-[0.2em] text-gray-400">Jogos ativos</p>
+                <p class="text-2xl font-black mt-1">{{ matches.length }}</p>
+              </div>
+              <div class="glass rounded-2xl p-4 border border-white/5">
+                <p class="text-[11px] uppercase tracking-[0.2em] text-gray-400">Encerrados</p>
+                <p class="text-2xl font-black mt-1 text-yellow-300">{{ totalFinishedMatches }}</p>
+              </div>
+              <div class="glass rounded-2xl p-4 border border-white/5">
+                <p class="text-[11px] uppercase tracking-[0.2em] text-gray-400">Líder atual</p>
+                <p class="text-base md:text-lg font-black mt-1 truncate">{{ ranking[0] ? ranking[0].name : '—' }}</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="glass rounded-[28px] p-5 md:p-6 border border-yellow-400/15">
+            <p class="text-xs font-bold text-yellow-300 tracking-[0.25em] mb-3">Partida em destaque</p>
+            <div v-if="activeMatch">
+              <div class="flex items-center justify-between gap-3 text-center">
+                <div class="flex-1">
+                  <div class="team-pill rounded-2xl px-3 py-4">
+                    <p class="text-[11px] uppercase text-green-300 mb-1">Casa</p>
+                    <p class="font-black text-lg md:text-xl">{{ activeMatch.teamA }}</p>
+                  </div>
+                </div>
+                <div class="shrink-0 flex items-center gap-2 px-2">
+                  <div class="score-box">{{ exibirPlacar(activeMatch.realScoreA) }}</div>
+                  <span class="text-yellow-400 font-black text-xl">X</span>
+                  <div class="score-box">{{ exibirPlacar(activeMatch.realScoreB) }}</div>
+                </div>
+                <div class="flex-1">
+                  <div class="team-pill rounded-2xl px-3 py-4">
+                    <p class="text-[11px] uppercase text-sky-300 mb-1">Visitante</p>
+                    <p class="font-black text-lg md:text-xl">{{ activeMatch.teamB }}</p>
+                  </div>
+                </div>
+              </div>
+              <div class="mt-4 flex justify-between items-center text-xs subtle-text">
+                <span>{{ activeMatch.group }}</span>
+                <span class="chip px-3 py-1" :class="activeMatch.isFinished ? 'status-live' : 'status-open'">
+                  {{ activeMatch.isFinished ? 'Resultado confirmado' : 'Aguardando resultado' }}
+                </span>
+              </div>
+            </div>
+            <div v-else class="text-sm subtle-text">Adicione ou selecione um jogo no modo admin para destacar aqui.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Modo admin -->
+    <main v-if="isAdmin" class="max-w-7xl mx-auto px-4 md:px-6 pt-6">
+      <div class="grid grid-cols-1 xl:grid-cols-[1fr_1.2fr] gap-6">
+
+        <section class="glass rounded-[28px] p-5 md:p-6 card-glow">
+          <div class="flex items-center justify-between gap-3 mb-5">
+            <div>
+              <h3 class="text-xl text-yellow-300">Central de jogos</h3>
+              <p class="text-sm subtle-text">Selecione partidas do catálogo para entrar na apresentação.</p>
+            </div>
+            <span class="chip px-3 py-1 text-xs font-bold">{{ allMatches.length }} no catálogo</span>
+          </div>
+
+          <div class="admin-scroll pr-2 space-y-2">
+            <div v-for="m in allMatches" :key="m.id" class="rounded-2xl border border-white/6 bg-white/5 px-3 py-3 flex items-center justify-between gap-3 hover:bg-white/10 transition">
+              <div class="min-w-0">
+                <p class="text-[11px] uppercase tracking-[0.2em] text-gray-400 mb-1">{{ m.group }}</p>
+                <p class="font-bold truncate">{{ m.teamA }} <span class="text-yellow-400">x</span> {{ m.teamB }}</p>
+              </div>
+              <button @click="selectMatch(m)" class="shrink-0 px-4 py-2 rounded-xl font-black text-sm transition" :class="matches.some(x => x.id === m.id) ? 'bg-sky-500 text-slate-950 hover:bg-sky-400' : 'bg-green-500 text-slate-950 hover:bg-green-400'">
+                {{ matches.some(x => x.id === m.id) ? 'Editar' : '+ Adicionar' }}
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section class="glass rounded-[28px] p-5 md:p-6 card-glow">
+          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
+            <div>
+              <h3 class="text-xl text-yellow-300">Sala de controle</h3>
+              <p class="text-sm subtle-text">Edite placar real e os palpites sem perder nada no F5.</p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <button @click="exportarBackup" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-black text-sm">💾 Backup</button>
+              <button @click="limparSomentePlacar" class="px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-black text-sm">🧹 Limpar</button>
+            </div>
+          </div>
+
+          <select v-model.number="selectedMatchId" class="w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 text-white font-bold mb-5 outline-none focus:border-yellow-400/70">
+            <option :value="null">Selecione um jogo...</option>
+            <option v-for="m in matches" :key="m.id" :value="m.id">{{ m.group }} - {{ m.teamA }} x {{ m.teamB }}</option>
+          </select>
+
+          <div v-if="activeMatch" class="rounded-[24px] bg-black/35 border border-white/8 p-4 md:p-5">
+            <div class="flex items-center justify-between gap-4 flex-wrap mb-5">
+              <div>
+                <p class="text-xs uppercase tracking-[0.25em] text-yellow-300">Jogo selecionado</p>
+                <h4 class="text-xl md:text-2xl">{{ activeMatch.teamA }} <span class="text-yellow-400">x</span> {{ activeMatch.teamB }}</h4>
+                <p class="text-sm subtle-text mt-1">{{ activeMatch.group }}</p>
+              </div>
+              <label class="chip px-4 py-2 text-sm font-bold flex items-center gap-2 cursor-pointer" :class="activeMatch.isFinished ? 'status-live' : 'status-open'">
+                <input type="checkbox" v-model="activeMatch.isFinished" />
+                {{ activeMatch.isFinished ? 'Jogo encerrado' : 'Jogo em aberto' }}
+              </label>
+            </div>
+
+            <div class="grid grid-cols-[1fr_auto_1fr] gap-3 items-center mb-6">
+              <div class="rounded-2xl bg-green-500/10 border border-green-400/15 p-4 text-center">
+                <p class="text-xs uppercase tracking-[0.2em] text-green-300 mb-2">{{ activeMatch.teamA }}</p>
+                <input type="number" min="0" v-model.number="activeMatch.realScoreA" class="score-input mx-auto" />
+              </div>
+              <div class="text-yellow-400 font-black text-2xl md:text-4xl">X</div>
+              <div class="rounded-2xl bg-sky-500/10 border border-sky-400/15 p-4 text-center">
+                <p class="text-xs uppercase tracking-[0.2em] text-sky-300 mb-2">{{ activeMatch.teamB }}</p>
+                <input type="number" min="0" v-model.number="activeMatch.realScoreB" class="score-input mx-auto" />
+              </div>
+            </div>
+
+            <div>
+              <div class="flex items-center justify-between gap-3 mb-3">
+                <h5 class="text-sm text-yellow-300">Palpites dos participantes</h5>
+                <span class="text-xs subtle-text">{{ activeMatchPredictions.length }} palpites</span>
+              </div>
+              <div class="max-h-[360px] overflow-y-auto space-y-2 pr-1">
+                <div v-for="pred in activeMatchPredictions" :key="pred.participant" class="rounded-2xl bg-white/[0.04] border border-white/6 px-3 py-3 flex items-center justify-between gap-3">
+                  <div class="min-w-0">
+                    <p class="font-bold truncate">{{ pred.participant }}</p>
+                    <p class="text-[11px] subtle-text">Palpite individual</p>
+                  </div>
+                  <div class="flex items-center gap-2 shrink-0">
+                    <input type="number" min="0" v-model.number="pred.scoreA" class="score-input !w-[56px] !text-xl !py-2" />
+                    <span class="text-yellow-400 font-black">X</span>
+                    <input type="number" min="0" v-model.number="pred.scoreB" class="score-input !w-[56px] !text-xl !py-2" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div v-else class="rounded-[24px] bg-black/35 border border-dashed border-white/12 p-8 text-center subtle-text">
+            Escolha um jogo para editar os dados do painel.
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <!-- Modo transmissão -->
+    <main v-else class="max-w-7xl mx-auto px-4 md:px-6 pt-6 space-y-6">
+      <section class="grid grid-cols-1 xl:grid-cols-[1.2fr_.8fr] gap-6">
+
+        <div class="glass rounded-[28px] p-5 md:p-6 card-glow">
+          <div class="flex items-center justify-between gap-3 flex-wrap mb-4">
+            <div>
+              <h3 class="text-xl text-yellow-300">Transmissão da rodada</h3>
+              <p class="text-sm subtle-text">Escolha a partida para mostrar os palpites na tela.</p>
+            </div>
+            <span class="chip px-3 py-1 text-xs font-bold">Auto save ativo</span>
+          </div>
+
+          <select v-model.number="selectedMatchId" class="w-full rounded-2xl bg-black/40 border border-yellow-400/25 px-4 py-4 text-white text-lg font-black outline-none focus:border-yellow-400/70 mb-5">
+            <option v-if="matches.length === 0" :value="null">Nenhum jogo selecionado</option>
+            <option v-for="m in matches" :key="m.id" :value="m.id">{{ m.group }} | {{ m.teamA }} x {{ m.teamB }}</option>
+          </select>
+
+          <div v-if="activeMatch" class="rounded-[24px] bg-black/35 border border-white/8 p-4 md:p-5">
+            <div class="flex items-center justify-between gap-3 flex-wrap mb-5">
+              <div>
+                <p class="text-xs uppercase tracking-[0.25em] text-yellow-300">Jogo em exibição</p>
+                <h4 class="text-2xl md:text-3xl">{{ activeMatch.teamA }} <span class="text-yellow-400">x</span> {{ activeMatch.teamB }}</h4>
+                <p class="subtle-text text-sm mt-1">{{ activeMatch.group }}</p>
+              </div>
+              <span class="chip px-4 py-2 text-sm font-bold" :class="activeMatch.isFinished ? 'status-live' : 'status-open'">
+                {{ activeMatch.isFinished ? 'Finalizado' : 'Em andamento' }}
+              </span>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+              <div v-for="pred in activeMatchPredictions" :key="pred.participant" class="rounded-[22px] p-4 border border-white/8 bg-gradient-to-b from-white/[0.08] to-white/[0.03] shadow-xl">
+                <div class="flex items-start justify-between gap-3 mb-3">
+                  <div class="min-w-0">
+                    <p class="text-yellow-300 font-black truncate text-sm md:text-base">{{ pred.participant }}</p>
+                    <p class="text-[11px] subtle-text">Palpite enviado</p>
+                  </div>
+                  <span class="chip px-2 py-1 text-[10px] font-bold">⚽</span>
+                </div>
+                <div class="flex justify-between text-[10px] subtle-text mb-2 gap-2">
+                  <span class="truncate">{{ activeMatch.teamA }}</span>
+                  <span class="truncate text-right">{{ activeMatch.teamB }}</span>
+                </div>
+                <div class="flex justify-center items-center gap-2">
+                  <div class="score-box !min-w-[64px] !min-h-[56px] !text-2xl">{{ exibirPlacar(pred.scoreA) }}</div>
+                  <span class="text-yellow-400 font-black">X</span>
+                  <div class="score-box !min-w-[64px] !min-h-[56px] !text-2xl">{{ exibirPlacar(pred.scoreB) }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div v-else class="rounded-[24px] bg-black/35 border border-dashed border-white/12 p-8 text-center subtle-text">
+            Adicione jogos no modo admin para começar a transmissão.
+          </div>
+        </div>
+
+        <div class="space-y-6">
+          <section class="glass rounded-[28px] p-5 md:p-6 card-glow">
+            <div class="flex items-center justify-between gap-3 mb-4">
+              <div>
+                <h3 class="text-xl text-yellow-300">Pódio</h3>
+                <p class="text-sm subtle-text">Os 3 melhores do momento.</p>
+              </div>
+              <span class="chip px-3 py-1 text-xs font-bold">Top 3</span>
+            </div>
+            <div class="grid grid-cols-1 gap-3">
+              <div v-for="(item, idx) in podium" :key="item.name" class="rounded-2xl p-4 border border-white/8" :class="idx === 0 ? 'podium-gold' : idx === 1 ? 'podium-silver' : 'podium-bronze'">
+                <div class="flex items-center justify-between gap-3">
+                  <div class="flex items-center gap-3 min-w-0">
+                    <div class="w-11 h-11 rounded-2xl bg-black/30 flex items-center justify-center font-black text-lg">{{ idx + 1 }}º</div>
+                    <div class="min-w-0">
+                      <p class="font-black truncate">{{ item.name }}</p>
+                      <p class="text-xs subtle-text">Pontuação atual</p>
+                    </div>
+                  </div>
+                  <div class="text-xl font-black text-yellow-300">{{ item.points }} pts</div>
+                </div>
+              </div>
+              <div v-if="podium.length === 0" class="text-sm subtle-text">Sem dados ainda.</div>
+            </div>
+          </section>
+
+          <section class="glass rounded-[28px] p-5 md:p-6 card-glow">
+            <div class="flex items-center justify-between gap-3 mb-4">
+              <div>
+                <h3 class="text-xl text-yellow-300">Ranking geral</h3>
+                <p class="text-sm subtle-text">Classificação completa do bolão.</p>
+              </div>
+              <span class="chip px-3 py-1 text-xs font-bold">{{ ranking.length }} nomes</span>
+            </div>
+            <div>
+              <div v-for="(rank, index) in ranking" :key="rank.name" class="rank-row" :class="index < 3 ? 'bg-white/[0.03]' : ''">
+                <div class="w-11 h-11 rounded-2xl bg-black/35 border border-white/8 flex items-center justify-center font-black text-lg">{{ index + 1 }}º</div>
+                <div class="min-w-0">
+                  <p class="font-black truncate">{{ rank.name }}</p>
+                  <p class="text-xs subtle-text">Participante</p>
+                </div>
+                <div class="text-right font-black text-lg" :class="index === 0 ? 'text-yellow-300' : 'text-green-400'">{{ rank.points }} pts</div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <!-- Modal de senha admin -->
+    <div v-if="showAdminModal" class="fixed inset-0 z-50 flex items-center justify-center" style="background:rgba(0,0,0,.7);backdrop-filter:blur(6px)">
+      <div class="glass card-glow rounded-[28px] p-8 w-full max-w-sm mx-4">
+        <h3 class="text-xl text-yellow-300 mb-1">Acesso restrito</h3>
+        <p class="text-sm subtle-text mb-6">Digite a senha para entrar no modo admin.</p>
+        <input
+          v-model="adminPasswordInput"
+          type="password"
+          placeholder="Senha"
+          @keyup.enter="confirmarAdmin"
+          class="w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 text-white font-bold mb-3 outline-none focus:border-yellow-400/70"
+        />
+        <p v-if="adminPasswordError" class="text-red-400 text-sm mb-3">{{ adminPasswordError }}</p>
+        <div class="flex gap-3">
+          <button @click="cancelarAdmin" class="flex-1 py-3 rounded-2xl border border-white/10 text-white font-black hover:bg-white/5 transition">Cancelar</button>
+          <button @click="confirmarAdmin" class="flex-1 py-3 rounded-2xl bg-yellow-500 text-black font-black hover:bg-yellow-400 transition">Entrar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
