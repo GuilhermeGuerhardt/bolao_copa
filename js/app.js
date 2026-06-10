@@ -16,12 +16,11 @@ createApp({
       user: null,
 
       view: 'transmissao',
-      authMode: 'login',
+      showAdminLogin: false,
       authError: '',
-      showPassword: { login: false, register: false, current: false, new: false, confirm: false },
+      showPassword: { login: false, current: false, new: false, confirm: false },
       authLoading: false,
       loginForm: { displayName: '', password: '' },
-      registerForm: { firstName: '', lastName: '', displayName: '', password: '', photo: null },
 
       participants: [],
       allMatches: buildAllMatches(),
@@ -31,7 +30,6 @@ createApp({
       settings: { actualChampion: null, actualTopScorer: null, championBonusPoints: 0, topScorerBonusPoints: 0 },
 
       pollTimer: null,
-      predictionSaveTimers: {},
 
       ALL_TEAMS,
 
@@ -40,8 +38,12 @@ createApp({
       profileMessage: '',
       profileSaving: false,
 
-      adminUsers: [],
-      resetPasswordInfo: null,
+      adminParticipants: [],
+      participantForm: { id: null, name: '', photo: null, whatsapp: '', championPick: null, topScorerPick: '' },
+      participantFormError: '',
+      participantFormSaving: false,
+      participantDeleteConfirm: null,
+
       specialSettingsMessage: ''
     };
   },
@@ -102,16 +104,6 @@ createApp({
       return this.token ? { Authorization: `Bearer ${this.token}` } : {};
     },
 
-    async onPhotoSelected(e) {
-      const file = e.target.files?.[0];
-      if (!file) return;
-      try {
-        this.registerForm.photo = await resizeImageToBase64(file);
-      } catch {
-        this.authError = 'Não foi possível carregar essa imagem.';
-      }
-    },
-
     async fazerLogin() {
       this.authError = '';
       this.authLoading = true;
@@ -134,34 +126,12 @@ createApp({
       }
     },
 
-    async fazerRegistro() {
-      this.authError = '';
-      this.authLoading = true;
-      try {
-        const res = await fetch(`${API}/auth/register`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(this.registerForm)
-        });
-        const data = await res.json();
-        if (!res.ok) {
-          this.authError = data.erro || 'Erro ao criar conta.';
-          return;
-        }
-        await this.aplicarSessao(data);
-      } catch {
-        this.authError = 'Erro ao conectar com o servidor.';
-      } finally {
-        this.authLoading = false;
-      }
-    },
-
     async aplicarSessao(data) {
       this.token = data.token;
       this.user = data.user;
       localStorage.setItem(TOKEN_KEY, this.token);
+      this.showAdminLogin = false;
       await this.carregarEstado();
-      this.iniciarPolling();
     },
 
     async carregarSessao() {
@@ -182,24 +152,13 @@ createApp({
       this.token = null;
       this.user = null;
       localStorage.removeItem(TOKEN_KEY);
-      this.matches = [];
-      this.predictions = [];
-      this.participants = [];
-      this.selectedMatchId = null;
       this.view = 'transmissao';
-      if (this.pollTimer) {
-        clearInterval(this.pollTimer);
-        this.pollTimer = null;
-      }
+      this.showAdminLogin = false;
     },
 
     async carregarEstado() {
       try {
         const res = await fetch(`${API}/state`, { headers: this.authHeaders() });
-        if (res.status === 401) {
-          this.logout();
-          return;
-        }
         if (!res.ok) return;
 
         const raw = await res.json();
@@ -213,8 +172,6 @@ createApp({
         if (this.matches.length && (this.selectedMatchId === null || !this.matches.some(m => m.id === this.selectedMatchId))) {
           this.selectedMatchId = this.matches[0].id;
         }
-
-        this.ensureMyPredictions();
       } catch {
         // mantém o estado atual em caso de falha de rede
       }
@@ -223,45 +180,8 @@ createApp({
     iniciarPolling() {
       if (this.pollTimer) clearInterval(this.pollTimer);
       this.pollTimer = setInterval(() => {
-        if (this.user) this.carregarEstado();
+        this.carregarEstado();
       }, 20000);
-    },
-
-    ensureMyPredictions() {
-      if (!this.user || this.user.isAdmin) return;
-      this.matches.forEach(match => {
-        const exists = this.predictions.find(
-          pred => pred.matchId === match.id && pred.participant === this.user.displayName
-        );
-        if (!exists) {
-          this.predictions.push({ matchId: match.id, participant: this.user.displayName, scoreA: null, scoreB: null });
-        }
-      });
-    },
-
-    getMyPrediction(matchId) {
-      return this.predictions.find(
-        pred => pred.matchId === matchId && pred.participant === this.user.displayName
-      ) || { matchId, participant: this.user.displayName, scoreA: null, scoreB: null };
-    },
-
-    salvarMeuPalpite(matchId) {
-      if (this.predictionSaveTimers[matchId]) {
-        clearTimeout(this.predictionSaveTimers[matchId]);
-      }
-      this.predictionSaveTimers[matchId] = setTimeout(async () => {
-        delete this.predictionSaveTimers[matchId];
-        const pred = this.getMyPrediction(matchId);
-        try {
-          await fetch(`${API}/predictions`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json', ...this.authHeaders() },
-            body: JSON.stringify({ predictions: [{ matchId, scoreA: pred.scoreA, scoreB: pred.scoreB }] })
-          });
-        } catch {
-          // ignora falha pontual de rede
-        }
-      }, 500);
     },
 
     async saveAdminState() {
@@ -390,44 +310,95 @@ createApp({
       }
     },
 
-    async salvarPalpiteEspecial() {
+    async carregarParticipantesAdmin() {
       try {
-        const res = await fetch(`${API}/profile/special-pick`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json', ...this.authHeaders() },
-          body: JSON.stringify({ championPick: this.user.championPick, topScorerPick: this.user.topScorerPick })
-        });
-        const data = await res.json();
-        if (res.ok) {
-          this.user = data.user;
-          await this.carregarEstado();
-        }
-      } catch {
-        // ignora falha pontual de rede
-      }
-    },
-
-    async carregarUsuariosAdmin() {
-      try {
-        const res = await fetch(`${API}/admin/users`, { headers: this.authHeaders() });
+        const res = await fetch(`${API}/admin/participants`, { headers: this.authHeaders() });
         if (!res.ok) return;
         const data = await res.json();
-        this.adminUsers = data.users;
+        this.adminParticipants = data.participants;
       } catch {
         // ignora falha pontual de rede
       }
     },
 
-    async redefinirSenha(u) {
+    abrirNovoParticipante() {
+      this.participantForm = { id: null, name: '', photo: null, whatsapp: '', championPick: null, topScorerPick: '' };
+      this.participantFormError = '';
+    },
+
+    editarParticipante(p) {
+      this.participantForm = {
+        id: p.id,
+        name: p.name,
+        photo: p.photo,
+        whatsapp: p.whatsapp || '',
+        championPick: p.championPick,
+        topScorerPick: p.topScorerPick || ''
+      };
+      this.participantFormError = '';
+    },
+
+    async onParticipantPhotoSelected(e) {
+      const file = e.target.files?.[0];
+      if (!file) return;
       try {
-        const res = await fetch(`${API}/admin/users/${u.id}/reset-password`, {
-          method: 'POST',
-          headers: this.authHeaders()
+        this.participantForm.photo = await resizeImageToBase64(file);
+      } catch {
+        this.participantFormError = 'Não foi possível carregar essa imagem.';
+      }
+    },
+
+    async salvarParticipante() {
+      this.participantFormError = '';
+      if (!this.participantForm.name.trim()) {
+        this.participantFormError = 'Informe o nome do participante.';
+        return;
+      }
+
+      this.participantFormSaving = true;
+      try {
+        const isEdit = this.participantForm.id !== null;
+        const url = isEdit ? `${API}/admin/participants/${this.participantForm.id}` : `${API}/admin/participants`;
+        const res = await fetch(url, {
+          method: isEdit ? 'PUT' : 'POST',
+          headers: { 'Content-Type': 'application/json', ...this.authHeaders() },
+          body: JSON.stringify({
+            name: this.participantForm.name,
+            photo: this.participantForm.photo,
+            whatsapp: this.participantForm.whatsapp,
+            championPick: this.participantForm.championPick,
+            topScorerPick: this.participantForm.topScorerPick
+          })
         });
         const data = await res.json();
-        if (res.ok) {
-          this.resetPasswordInfo = { displayName: data.displayName, password: data.password };
+        if (!res.ok) {
+          this.participantFormError = data.erro || 'Erro ao salvar participante.';
+          return;
         }
+        this.abrirNovoParticipante();
+        await this.carregarParticipantesAdmin();
+        await this.carregarEstado();
+      } catch {
+        this.participantFormError = 'Erro ao conectar com o servidor.';
+      } finally {
+        this.participantFormSaving = false;
+      }
+    },
+
+    async excluirParticipante(p) {
+      if (this.participantDeleteConfirm !== p.id) {
+        this.participantDeleteConfirm = p.id;
+        return;
+      }
+      this.participantDeleteConfirm = null;
+      try {
+        await fetch(`${API}/admin/participants/${p.id}`, {
+          method: 'DELETE',
+          headers: this.authHeaders()
+        });
+        if (this.participantForm.id === p.id) this.abrirNovoParticipante();
+        await this.carregarParticipantesAdmin();
+        await this.carregarEstado();
       } catch {
         // ignora falha pontual de rede
       }
@@ -451,12 +422,8 @@ createApp({
   },
 
   async mounted() {
-    if (this.token) {
-      await this.carregarSessao();
-      if (this.user) {
-        await this.carregarEstado();
-        this.iniciarPolling();
-      }
-    }
+    await this.carregarEstado();
+    this.iniciarPolling();
+    if (this.token) await this.carregarSessao();
   }
 }).mount('#app');

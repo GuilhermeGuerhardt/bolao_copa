@@ -14,65 +14,32 @@
 <body>
   <div id="app" class="min-h-screen pb-10">
 
-    <!-- Tela de login / cadastro -->
-    <div v-if="!user" class="min-h-screen flex items-center justify-center px-4 py-10">
-      <div class="relative w-full max-w-md">
-        <div class="absolute -inset-1 rounded-[32px] bg-yellow-400/10 blur-2xl"></div>
-        <div class="relative glass card-glow rounded-[28px] p-6 md:p-8">
-          <div class="text-center mb-6">
-            <img src="https://s3-sa-east-1.amazonaws.com/projetos-artes/fullsize%2F2019%2F05%2F23%2F11%2FLogo-256995_1874_115641677_488885145.jpg" alt="Logo" class="h-16 w-16 rounded-2xl border border-yellow-400/50 object-cover bg-black mx-auto mb-3" />
-            <p class="text-[11px] font-bold tracking-[0.35em] text-yellow-300 uppercase">Edição Copa</p>
-            <h1 class="text-2xl md:text-3xl font-bold text-white">Palpites dos Imparáveis</h1>
+      <!-- Modal de login do admin -->
+      <div v-if="showAdminLogin && !user" class="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/60 backdrop-blur-sm">
+        <div class="relative w-full max-w-sm">
+          <div class="absolute -inset-1 rounded-[32px] bg-yellow-400/10 blur-2xl"></div>
+          <div class="relative glass card-glow rounded-[28px] p-6 md:p-8">
+            <div class="flex items-center justify-between mb-4">
+              <h1 class="text-xl font-bold text-white">Acesso do Admin</h1>
+              <button @click="showAdminLogin = false; authError = ''" class="text-white/50 hover:text-white text-xl leading-none">✕</button>
+            </div>
+
+            <form @submit.prevent="fazerLogin" class="space-y-3">
+              <input v-model="loginForm.displayName" type="text" placeholder="Nome de exibição" class="w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 text-white font-bold outline-none focus:border-yellow-400/70" />
+              <div class="relative">
+                <input v-model="loginForm.password" :type="showPassword.login ? 'text' : 'password'" placeholder="Senha" class="w-full rounded-2xl bg-black/40 border border-white/10 pl-4 pr-12 py-3 text-white font-bold outline-none focus:border-yellow-400/70" />
+                <button type="button" @click="showPassword.login = !showPassword.login" class="absolute right-3 top-1/2 -translate-y-1/2 text-lg text-white/50 hover:text-white/90 transition">{{ showPassword.login ? '🙈' : '👁️' }}</button>
+              </div>
+              <button type="submit" :disabled="authLoading" class="w-full py-3 rounded-2xl bg-yellow-500 text-black font-black hover:bg-yellow-400 transition disabled:opacity-60">
+                {{ authLoading ? 'Entrando...' : 'Entrar' }}
+              </button>
+            </form>
+
+            <p v-if="authError" class="text-red-400 text-sm mt-4 text-center">{{ authError }}</p>
           </div>
-
-          <div class="flex gap-2 mb-6 p-1 rounded-2xl bg-black/30 border border-white/10">
-            <button @click="authMode = 'login'; authError = ''" class="flex-1 py-2 rounded-xl font-black text-sm transition" :class="authMode === 'login' ? 'bg-yellow-500 text-black' : 'text-white/70 hover:text-white'">Entrar</button>
-            <button @click="authMode = 'register'; authError = ''" class="flex-1 py-2 rounded-xl font-black text-sm transition" :class="authMode === 'register' ? 'bg-yellow-500 text-black' : 'text-white/70 hover:text-white'">Criar conta</button>
-          </div>
-
-          <form v-if="authMode === 'login'" @submit.prevent="fazerLogin" class="space-y-3">
-            <input v-model="loginForm.displayName" type="text" placeholder="Nome de exibição" class="w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 text-white font-bold outline-none focus:border-yellow-400/70" />
-            <div class="relative">
-              <input v-model="loginForm.password" :type="showPassword.login ? 'text' : 'password'" placeholder="Senha" class="w-full rounded-2xl bg-black/40 border border-white/10 pl-4 pr-12 py-3 text-white font-bold outline-none focus:border-yellow-400/70" />
-              <button type="button" @click="showPassword.login = !showPassword.login" class="absolute right-3 top-1/2 -translate-y-1/2 text-lg text-white/50 hover:text-white/90 transition">{{ showPassword.login ? '🙈' : '👁️' }}</button>
-            </div>
-            <button type="submit" :disabled="authLoading" class="w-full py-3 rounded-2xl bg-yellow-500 text-black font-black hover:bg-yellow-400 transition disabled:opacity-60">
-              {{ authLoading ? 'Entrando...' : 'Entrar' }}
-            </button>
-          </form>
-
-          <form v-else @submit.prevent="fazerRegistro" class="space-y-3">
-            <div class="grid grid-cols-2 gap-3">
-              <input v-model="registerForm.firstName" type="text" placeholder="Nome" class="w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 text-white font-bold outline-none focus:border-yellow-400/70" />
-              <input v-model="registerForm.lastName" type="text" placeholder="Sobrenome" class="w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 text-white font-bold outline-none focus:border-yellow-400/70" />
-            </div>
-            <input v-model="registerForm.displayName" type="text" placeholder="Nome de exibição (apelido)" class="w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 text-white font-bold outline-none focus:border-yellow-400/70" />
-            <div class="relative">
-              <input v-model="registerForm.password" :type="showPassword.register ? 'text' : 'password'" placeholder="Senha" class="w-full rounded-2xl bg-black/40 border border-white/10 pl-4 pr-12 py-3 text-white font-bold outline-none focus:border-yellow-400/70" />
-              <button type="button" @click="showPassword.register = !showPassword.register" class="absolute right-3 top-1/2 -translate-y-1/2 text-lg text-white/50 hover:text-white/90 transition">{{ showPassword.register ? '🙈' : '👁️' }}</button>
-            </div>
-
-            <div class="flex items-center gap-3">
-              <label class="shrink-0 cursor-pointer px-4 py-3 rounded-2xl border border-white/10 text-white font-bold text-sm hover:bg-white/5 transition">
-                📷 Foto (opcional)
-                <input type="file" accept="image/*" @change="onPhotoSelected" class="hidden" />
-              </label>
-              <img v-if="registerForm.photo" :src="registerForm.photo" class="w-10 h-10 rounded-xl object-cover border border-white/10" />
-              <button v-if="registerForm.photo" type="button" @click="registerForm.photo = null" class="text-xs text-red-400 hover:underline">Remover</button>
-            </div>
-
-            <button type="submit" :disabled="authLoading" class="w-full py-3 rounded-2xl bg-yellow-500 text-black font-black hover:bg-yellow-400 transition disabled:opacity-60">
-              {{ authLoading ? 'Criando...' : 'Criar conta' }}
-            </button>
-          </form>
-
-          <p v-if="authError" class="text-red-400 text-sm mt-4 text-center">{{ authError }}</p>
         </div>
       </div>
-    </div>
 
-    <!-- App principal -->
-    <template v-else>
       <!-- Cabeçalho -->
       <header class="sticky top-0 z-20 border-b border-yellow-500/20 backdrop-blur-xl" style="background: rgba(3,12,8,.78)">
         <div class="max-w-7xl mx-auto px-4 md:px-6 py-4 flex items-center justify-between gap-4">
@@ -93,15 +60,18 @@
               <span>🏆</span>
               <span>{{ totalFinishedMatches }} jogos encerrados</span>
             </div>
-            <div class="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-2xl bg-white/5 border border-white/10">
-              <img v-if="user.photo" :src="user.photo" class="w-9 h-9 rounded-xl object-cover" />
-              <div v-else class="w-9 h-9 rounded-xl bg-yellow-500 text-black font-black flex items-center justify-center">{{ user.displayName.charAt(0).toUpperCase() }}</div>
-              <div class="hidden sm:block min-w-0">
-                <p class="text-sm font-black truncate max-w-[120px]">{{ user.displayName }}</p>
-                <p class="text-[10px] subtle-text">{{ user.isAdmin ? 'Administrador' : 'Participante' }}</p>
+            <template v-if="user">
+              <div class="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-2xl bg-white/5 border border-white/10">
+                <img v-if="user.photo" :src="user.photo" class="w-9 h-9 rounded-xl object-cover" />
+                <div v-else class="w-9 h-9 rounded-xl bg-yellow-500 text-black font-black flex items-center justify-center">{{ user.displayName.charAt(0).toUpperCase() }}</div>
+                <div class="hidden sm:block min-w-0">
+                  <p class="text-sm font-black truncate max-w-[120px]">{{ user.displayName }}</p>
+                  <p class="text-[10px] subtle-text">Administrador</p>
+                </div>
               </div>
-            </div>
-            <button @click="logout" class="px-4 py-3 rounded-2xl border border-white/10 text-white font-black hover:bg-white/5 transition text-sm">Sair</button>
+              <button @click="logout" class="px-4 py-3 rounded-2xl border border-white/10 text-white font-black hover:bg-white/5 transition text-sm">Sair</button>
+            </template>
+            <button v-else @click="showAdminLogin = true" class="px-4 py-3 rounded-2xl border border-white/10 text-white font-black hover:bg-white/5 transition text-sm">Admin</button>
           </div>
         </div>
       </header>
@@ -109,9 +79,8 @@
       <!-- Navegação -->
       <nav class="max-w-7xl mx-auto px-4 md:px-6 pt-4 flex flex-wrap gap-2">
         <button @click="view = 'transmissao'" class="px-4 py-2 rounded-2xl font-black text-sm transition" :class="view === 'transmissao' ? 'bg-yellow-500 text-black' : 'glass text-white/80 hover:text-white'">📺 Transmissão</button>
-        <button v-if="!user.isAdmin" @click="view = 'palpites'" class="px-4 py-2 rounded-2xl font-black text-sm transition" :class="view === 'palpites' ? 'bg-yellow-500 text-black' : 'glass text-white/80 hover:text-white'">📝 Meus palpites</button>
-        <button @click="abrirPerfil()" class="px-4 py-2 rounded-2xl font-black text-sm transition" :class="view === 'perfil' ? 'bg-yellow-500 text-black' : 'glass text-white/80 hover:text-white'">👤 Perfil</button>
-        <button v-if="user.isAdmin" @click="view = 'admin'; carregarUsuariosAdmin()" class="px-4 py-2 rounded-2xl font-black text-sm transition" :class="view === 'admin' ? 'bg-yellow-500 text-black' : 'glass text-white/80 hover:text-white'">⚙️ Admin</button>
+        <button v-if="user" @click="abrirPerfil()" class="px-4 py-2 rounded-2xl font-black text-sm transition" :class="view === 'perfil' ? 'bg-yellow-500 text-black' : 'glass text-white/80 hover:text-white'">👤 Perfil</button>
+        <button v-if="user && user.isAdmin" @click="view = 'admin'; carregarParticipantesAdmin()" class="px-4 py-2 rounded-2xl font-black text-sm transition" :class="view === 'admin' ? 'bg-yellow-500 text-black' : 'glass text-white/80 hover:text-white'">⚙️ Admin</button>
       </nav>
 
       <!-- Painel principal -->
@@ -188,7 +157,7 @@
       </section>
 
       <!-- Modo admin -->
-      <main v-if="view === 'admin' && user.isAdmin" class="max-w-7xl mx-auto px-4 md:px-6 pt-6">
+      <main v-if="view === 'admin' && user && user.isAdmin" class="max-w-7xl mx-auto px-4 md:px-6 pt-6">
         <div class="grid grid-cols-1 xl:grid-cols-[1fr_1.2fr] gap-6">
 
           <section class="glass rounded-[28px] p-5 md:p-6 card-glow">
@@ -266,26 +235,69 @@
           <section class="glass rounded-[28px] p-5 md:p-6 card-glow">
             <div class="flex items-center justify-between gap-3 mb-5">
               <div>
-                <h3 class="text-xl text-yellow-300">Usuários</h3>
-                <p class="text-sm subtle-text">Redefina a senha de um participante caso ele esqueça.</p>
+                <h3 class="text-xl text-yellow-300">Participantes</h3>
+                <p class="text-sm subtle-text">Cadastre quem vai participar e o WhatsApp para receber o jogo do dia.</p>
               </div>
-              <span class="chip px-3 py-1 text-xs font-bold">{{ adminUsers.length }} contas</span>
+              <span class="chip px-3 py-1 text-xs font-bold">{{ adminParticipants.length }} cadastrados</span>
             </div>
 
-            <div v-if="resetPasswordInfo" class="rounded-2xl border border-yellow-400/30 bg-yellow-400/10 p-4 mb-4 text-sm">
-              <p class="font-black text-yellow-300 mb-1">Nova senha gerada para {{ resetPasswordInfo.displayName }}</p>
-              <p class="font-mono text-lg">{{ resetPasswordInfo.password }}</p>
-              <p class="subtle-text text-xs mt-1">Anote e repasse ao usuário — essa senha não será exibida novamente.</p>
-              <button @click="resetPasswordInfo = null" class="text-xs text-red-400 hover:underline mt-2">Fechar</button>
-            </div>
-
-            <div class="admin-scroll pr-2 space-y-2">
-              <div v-for="u in adminUsers" :key="u.id" class="rounded-2xl border border-white/6 bg-white/5 px-3 py-3 flex items-center justify-between gap-3">
-                <div class="min-w-0">
-                  <p class="font-bold truncate">{{ u.firstName }} {{ u.lastName }} <span class="subtle-text text-xs">({{ u.displayName }})</span></p>
-                  <p class="text-[11px] subtle-text">{{ u.isAdmin ? 'Administrador' : 'Participante' }}</p>
+            <div class="admin-scroll pr-2 space-y-2 mb-5">
+              <div v-for="p in adminParticipants" :key="p.id" class="rounded-2xl border border-white/6 bg-white/5 px-3 py-3 flex items-center justify-between gap-3">
+                <div class="flex items-center gap-3 min-w-0">
+                  <img v-if="p.photo" :src="p.photo" class="rank-avatar" />
+                  <div v-else class="rank-avatar-placeholder">{{ p.name.charAt(0).toUpperCase() }}</div>
+                  <div class="min-w-0">
+                    <p class="font-bold truncate">{{ p.name }}</p>
+                    <p class="text-[11px] subtle-text">{{ p.whatsapp || 'Sem WhatsApp cadastrado' }}</p>
+                  </div>
                 </div>
-                <button @click="redefinirSenha(u)" class="shrink-0 px-4 py-2 rounded-xl font-black text-sm bg-orange-600 hover:bg-orange-500 text-white transition">Redefinir senha</button>
+                <div class="shrink-0 flex gap-2">
+                  <button @click="editarParticipante(p)" class="px-3 py-2 rounded-xl font-black text-xs bg-sky-600 hover:bg-sky-500 text-white transition">Editar</button>
+                  <button @click="excluirParticipante(p)" class="px-3 py-2 rounded-xl font-black text-xs transition" :class="participantDeleteConfirm === p.id ? 'bg-red-600 hover:bg-red-500 text-white' : 'bg-white/10 hover:bg-white/20 text-white'">
+                    {{ participantDeleteConfirm === p.id ? 'Confirmar?' : 'Excluir' }}
+                  </button>
+                </div>
+              </div>
+              <div v-if="adminParticipants.length === 0" class="text-sm subtle-text">Nenhum participante cadastrado ainda.</div>
+            </div>
+
+            <div class="rounded-2xl border border-white/6 bg-white/5 p-4 space-y-3">
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">{{ participantForm.id ? 'Editar participante' : 'Novo participante' }}</p>
+
+              <div class="flex items-center gap-3">
+                <img v-if="participantForm.photo" :src="participantForm.photo" class="w-12 h-12 rounded-2xl object-cover border border-white/10" />
+                <div v-else class="w-12 h-12 rounded-2xl bg-yellow-500 text-black font-black flex items-center justify-center">{{ (participantForm.name || '?').charAt(0).toUpperCase() }}</div>
+                <label class="cursor-pointer px-3 py-2 rounded-xl border border-white/10 text-white font-bold text-xs hover:bg-white/5 transition">
+                  📷 Foto
+                  <input type="file" accept="image/*" @change="onParticipantPhotoSelected" class="hidden" />
+                </label>
+                <button v-if="participantForm.photo" type="button" @click="participantForm.photo = null" class="text-xs text-red-400 hover:underline">Remover</button>
+              </div>
+
+              <input v-model="participantForm.name" type="text" placeholder="Nome do participante" class="w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 text-white font-bold outline-none focus:border-yellow-400/70" />
+              <input v-model="participantForm.whatsapp" type="text" placeholder="WhatsApp (com DDD)" class="w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 text-white font-bold outline-none focus:border-yellow-400/70" />
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label class="text-[11px] uppercase tracking-[0.2em] text-gray-400 mb-2 block">Palpite de campeão</label>
+                  <select v-model="participantForm.championPick" class="w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 text-white font-bold outline-none focus:border-yellow-400/70">
+                    <option :value="null">Selecione...</option>
+                    <option v-for="team in ALL_TEAMS" :key="team" :value="team">{{ team }}</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="text-[11px] uppercase tracking-[0.2em] text-gray-400 mb-2 block">Palpite de artilheiro</label>
+                  <input v-model="participantForm.topScorerPick" type="text" placeholder="Nome do jogador" class="w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 text-white font-bold outline-none focus:border-yellow-400/70" />
+                </div>
+              </div>
+
+              <p v-if="participantFormError" class="text-red-400 text-sm">{{ participantFormError }}</p>
+
+              <div class="flex gap-2">
+                <button @click="salvarParticipante" :disabled="participantFormSaving" class="flex-1 py-3 rounded-2xl bg-yellow-500 text-black font-black hover:bg-yellow-400 transition disabled:opacity-60">
+                  {{ participantFormSaving ? 'Salvando...' : (participantForm.id ? 'Salvar alterações' : 'Adicionar participante') }}
+                </button>
+                <button v-if="participantForm.id" @click="abrirNovoParticipante" type="button" class="px-4 py-3 rounded-2xl border border-white/10 text-white font-black hover:bg-white/5 transition">Cancelar</button>
               </div>
             </div>
           </section>
@@ -327,68 +339,8 @@
         </div>
       </main>
 
-      <!-- Meus palpites -->
-      <main v-else-if="view === 'palpites'" class="max-w-7xl mx-auto px-4 md:px-6 pt-6">
-        <section class="glass rounded-[28px] p-5 md:p-6 card-glow mb-6">
-          <div class="mb-4">
-            <h3 class="text-xl text-yellow-300">Palpite especial</h3>
-            <p class="text-sm subtle-text">Escolha o campeão da Copa e o artilheiro do torneio. Vale pontos bônus no final!</p>
-          </div>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div>
-              <label class="text-[11px] uppercase tracking-[0.2em] text-gray-400 mb-2 block">Campeão</label>
-              <select v-model="user.championPick" @change="salvarPalpiteEspecial" class="w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 text-white font-bold outline-none focus:border-yellow-400/70">
-                <option :value="null">Selecione...</option>
-                <option v-for="team in ALL_TEAMS" :key="team" :value="team">{{ team }}</option>
-              </select>
-            </div>
-            <div>
-              <label class="text-[11px] uppercase tracking-[0.2em] text-gray-400 mb-2 block">Artilheiro</label>
-              <input v-model="user.topScorerPick" @change="salvarPalpiteEspecial" type="text" placeholder="Nome do jogador" class="w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 text-white font-bold outline-none focus:border-yellow-400/70" />
-            </div>
-          </div>
-        </section>
-
-        <section class="glass rounded-[28px] p-5 md:p-6 card-glow">
-          <div class="flex items-center justify-between gap-3 mb-5 flex-wrap">
-            <div>
-              <h3 class="text-xl text-yellow-300">Meus palpites</h3>
-              <p class="text-sm subtle-text">Preencha o placar que você acha que vai acontecer. Jogos encerrados não podem mais ser alterados.</p>
-            </div>
-            <span class="chip px-3 py-1 text-xs font-bold">{{ matches.length }} jogos liberados</span>
-          </div>
-
-          <div v-if="matches.length === 0" class="rounded-[24px] bg-black/35 border border-dashed border-white/12 p-8 text-center subtle-text">
-            Nenhum jogo foi liberado pelo admin ainda.
-          </div>
-
-          <div v-else class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-            <div v-for="m in matches" :key="m.id" class="rounded-2xl border border-white/6 bg-white/5 px-4 py-4">
-              <div class="flex items-center justify-between gap-2 mb-3">
-                <p class="text-[11px] uppercase tracking-[0.2em] text-gray-400">{{ m.group }}</p>
-                <span class="chip px-2 py-1 text-[10px] font-bold" :class="m.isFinished ? 'status-live' : 'status-open'">
-                  {{ m.isFinished ? 'Encerrado' : 'Aberto' }}
-                </span>
-              </div>
-              <div class="grid grid-cols-[1fr_auto_1fr] gap-2 items-center">
-                <div class="text-center">
-                  <p class="font-bold text-sm truncate mb-2">{{ m.teamA }}</p>
-                  <input type="number" min="0" v-model.number="getMyPrediction(m.id).scoreA" :disabled="m.isFinished" @change="salvarMeuPalpite(m.id)" class="score-input mx-auto" />
-                </div>
-                <div class="text-yellow-400 font-black">X</div>
-                <div class="text-center">
-                  <p class="font-bold text-sm truncate mb-2">{{ m.teamB }}</p>
-                  <input type="number" min="0" v-model.number="getMyPrediction(m.id).scoreB" :disabled="m.isFinished" @change="salvarMeuPalpite(m.id)" class="score-input mx-auto" />
-                </div>
-              </div>
-              <p v-if="m.isFinished" class="text-xs subtle-text mt-3 text-center">Placar real: {{ exibirPlacar(m.realScoreA) }} x {{ exibirPlacar(m.realScoreB) }}</p>
-            </div>
-          </div>
-        </section>
-      </main>
-
       <!-- Perfil -->
-      <main v-else-if="view === 'perfil'" class="max-w-7xl mx-auto px-4 md:px-6 pt-6">
+      <main v-else-if="view === 'perfil' && user" class="max-w-7xl mx-auto px-4 md:px-6 pt-6">
         <section class="glass rounded-[28px] p-5 md:p-6 card-glow max-w-2xl mx-auto">
           <div class="mb-5">
             <h3 class="text-xl text-yellow-300">Meu perfil</h3>
@@ -449,12 +401,12 @@
             <div class="flex items-center justify-between gap-3 flex-wrap mb-4">
               <div>
                 <h3 class="text-xl text-yellow-300">Transmissão da rodada</h3>
-                <p class="text-sm subtle-text">{{ user.isAdmin ? 'Escolha a partida para mostrar os palpites na tela.' : 'Partida em exibição no momento.' }}</p>
+                <p class="text-sm subtle-text">{{ user && user.isAdmin ? 'Escolha a partida para mostrar os palpites na tela.' : 'Partida em exibição no momento.' }}</p>
               </div>
               <span class="chip px-3 py-1 text-xs font-bold">Auto save ativo</span>
             </div>
 
-            <select v-model.number="selectedMatchId" @change="saveAdminState" :disabled="!user.isAdmin" class="w-full rounded-2xl bg-black/40 border border-yellow-400/25 px-4 py-4 text-white text-lg font-black outline-none focus:border-yellow-400/70 mb-5 disabled:opacity-70">
+            <select v-model.number="selectedMatchId" @change="saveAdminState" :disabled="!(user && user.isAdmin)" class="w-full rounded-2xl bg-black/40 border border-yellow-400/25 px-4 py-4 text-white text-lg font-black outline-none focus:border-yellow-400/70 mb-5 disabled:opacity-70">
               <option v-if="matches.length === 0" :value="null">Nenhum jogo selecionado</option>
               <option v-for="m in matches" :key="m.id" :value="m.id">{{ m.group }} | {{ m.teamA }} x {{ m.teamB }}</option>
             </select>
@@ -574,7 +526,6 @@
           </div>
         </section>
       </main>
-    </template>
   </div>
 
   <script type="module" src="js/app.js"></script>

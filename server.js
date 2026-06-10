@@ -89,6 +89,22 @@ async function initDb() {
     INSERT INTO bolao_settings (key, value) VALUES ('actualTopScorer', NULL) ON CONFLICT (key) DO NOTHING;
     INSERT INTO bolao_settings (key, value) VALUES ('championBonusPoints', '10') ON CONFLICT (key) DO NOTHING;
     INSERT INTO bolao_settings (key, value) VALUES ('topScorerBonusPoints', '5') ON CONFLICT (key) DO NOTHING;
+
+    CREATE TABLE IF NOT EXISTS bolao_participants (
+      id              SERIAL PRIMARY KEY,
+      name            TEXT UNIQUE NOT NULL,
+      photo           TEXT,
+      whatsapp        TEXT UNIQUE,
+      "championPick"  TEXT,
+      "topScorerPick" TEXT,
+      "createdAt"     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+    INSERT INTO bolao_participants (name, photo, "championPick", "topScorerPick", "createdAt")
+    SELECT "displayName", photo, "championPick", "topScorerPick", "createdAt"
+    FROM bolao_users
+    WHERE "isAdmin" = FALSE
+    ON CONFLICT (name) DO NOTHING;
   `);
   console.log("Banco de dados pronto.");
 }
@@ -157,6 +173,29 @@ function generateRandomPassword() {
   return crypto.randomBytes(9).toString("base64").replace(/[/+=]/g, "").slice(0, 12);
 }
 
+function normalizePhone(value) {
+  return String(value ?? "").replace(/\D/g, "");
+}
+
+function n8nMiddleware(req, res, next) {
+  const key = req.headers["x-api-key"];
+  if (!process.env.N8N_API_KEY || key !== process.env.N8N_API_KEY) {
+    return res.status(401).json({ erro: "Não autorizado." });
+  }
+  next();
+}
+
+function sanitizeParticipant(p) {
+  return {
+    id: p.id,
+    name: p.name,
+    photo: p.photo ?? null,
+    whatsapp: p.whatsapp ?? null,
+    championPick: p.championPick ?? null,
+    topScorerPick: p.topScorerPick ?? null,
+  };
+}
+
 // ─── App ─────────────────────────────────────────────────────────────────────
 
 const app = express();
@@ -166,45 +205,6 @@ app.use(express.json({ limit: "2mb" }));
 app.get("/api/health", (_, res) => res.json({ ok: true, api: "bolao", versao: 2 }));
 
 // ─── Autenticação ──────────────────────────────────────────────────────────────
-
-app.post("/api/auth/register", async (req, res) => {
-  try {
-    const { displayName, password, firstName, lastName, photo } = req.body || {};
-
-    const nome = normalizeDisplayNameInput(displayName);
-    const sobrenome = String(lastName ?? "").trim();
-    const primeiroNome = String(firstName ?? "").trim();
-
-    if (!nome || !password || !primeiroNome || !sobrenome) {
-      return res.status(400).json({ erro: "Preencha nome de exibição, senha, nome e sobrenome." });
-    }
-    if (String(password).length < 4) {
-      return res.status(400).json({ erro: "A senha deve ter pelo menos 4 caracteres." });
-    }
-    if (photo && typeof photo === "string" && photo.length > 1_500_000) {
-      return res.status(400).json({ erro: "Foto muito grande." });
-    }
-
-    const existing = await queryOne(`SELECT id FROM bolao_users WHERE LOWER("displayName") = LOWER($1)`, [nome]);
-    if (existing) {
-      return res.status(409).json({ erro: "Esse nome de exibição já está em uso." });
-    }
-
-    const passwordHash = await bcrypt.hash(String(password), 10);
-    const user = await queryOne(
-      `INSERT INTO bolao_users ("displayName", "firstName", "lastName", "passwordHash", photo, "isAdmin")
-       VALUES ($1, $2, $3, $4, $5, FALSE)
-       RETURNING id, "displayName", "firstName", "lastName", photo, "isAdmin"`,
-      [nome, primeiroNome, sobrenome, passwordHash, photo || null]
-    );
-
-    const token = signToken(user);
-    res.json({ token, user: sanitizeUser(user) });
-  } catch (e) {
-    console.error("POST /api/auth/register", e);
-    res.status(500).json({ erro: "Erro ao criar conta." });
-  }
-});
 
 app.post("/api/auth/login", async (req, res) => {
   try {
@@ -241,13 +241,10 @@ app.get("/api/auth/me", authMiddleware, async (req, res) => {
 
 // ─── State (leitura geral) ─────────────────────────────────────────────────────
 
-app.get("/api/state", authMiddleware, async (req, res) => {
+app.get("/api/state", async (req, res) => {
   try {
-    const [users, matches, predictions, settings] = await Promise.all([
-      query(
-        `SELECT "displayName" AS name, photo, "championPick", "topScorerPick"
-         FROM bolao_users WHERE "isAdmin" = FALSE ORDER BY "displayName"`
-      ),
+    const [participants, matches, predictions, settings] = await Promise.all([
+      query(`SELECT name, photo, "championPick", "topScorerPick" FROM bolao_participants ORDER BY name`),
       query(`SELECT * FROM bolao_matches ORDER BY id`),
       query(`SELECT * FROM bolao_predictions`),
       query(`SELECT key, value FROM bolao_settings`),
@@ -256,11 +253,11 @@ app.get("/api/state", authMiddleware, async (req, res) => {
     const settingsMap = Object.fromEntries(settings.map((s) => [s.key, s.value]));
 
     res.json({
-      participants: users.map((u) => ({
-        name: u.name,
-        photo: u.photo ?? null,
-        championPick: u.championPick ?? null,
-        topScorerPick: u.topScorerPick ?? null,
+      participants: participants.map((p) => ({
+        name: p.name,
+        photo: p.photo ?? null,
+        championPick: p.championPick ?? null,
+        topScorerPick: p.topScorerPick ?? null,
       })),
       selectedMatchId: settingsMap.selectedMatchId ? Number(settingsMap.selectedMatchId) : null,
       matches: matches.map(normalizeMatch),
@@ -342,28 +339,6 @@ app.put("/api/state", authMiddleware, adminMiddleware, async (req, res) => {
   }
 });
 
-// ─── Palpites do usuário logado ────────────────────────────────────────────────
-
-app.put("/api/predictions", authMiddleware, async (req, res) => {
-  try {
-    const { predictions = [] } = req.body || {};
-    for (const p of predictions) {
-      await query(
-        `INSERT INTO bolao_predictions ("matchId", participant, "scoreA", "scoreB")
-         VALUES ($1, $2, $3, $4)
-         ON CONFLICT ("matchId", participant) DO UPDATE SET
-           "scoreA" = EXCLUDED."scoreA",
-           "scoreB" = EXCLUDED."scoreB"`,
-        [p.matchId, req.user.displayName, p.scoreA ?? null, p.scoreB ?? null]
-      );
-    }
-    res.json({ ok: true });
-  } catch (e) {
-    console.error("PUT /api/predictions", e);
-    res.status(500).json({ erro: "Erro ao salvar palpites." });
-  }
-});
-
 // ─── Limpar placar (somente admin) ─────────────────────────────────────────────
 
 app.post("/api/state/limpar", authMiddleware, adminMiddleware, async (req, res) => {
@@ -425,54 +400,160 @@ app.put("/api/profile", authMiddleware, async (req, res) => {
   }
 });
 
-app.put("/api/profile/special-pick", authMiddleware, async (req, res) => {
+// ─── Gestão de participantes (somente admin) ───────────────────────────────────
+
+app.get("/api/admin/participants", authMiddleware, adminMiddleware, async (req, res) => {
   try {
-    const { championPick, topScorerPick } = req.body || {};
+    const participants = await query(`SELECT * FROM bolao_participants ORDER BY name`);
+    res.json({ participants: participants.map(sanitizeParticipant) });
+  } catch (e) {
+    console.error("GET /api/admin/participants", e);
+    res.status(500).json({ erro: "Erro ao carregar participantes." });
+  }
+});
+
+app.post("/api/admin/participants", authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const { name, photo, whatsapp, championPick, topScorerPick } = req.body || {};
+
+    const nome = normalizeDisplayNameInput(name);
+    if (!nome) {
+      return res.status(400).json({ erro: "Informe o nome do participante." });
+    }
+    if (photo && typeof photo === "string" && photo.length > 1_500_000) {
+      return res.status(400).json({ erro: "Foto muito grande." });
+    }
+
+    const existingName = await queryOne(`SELECT id FROM bolao_participants WHERE LOWER(name) = LOWER($1)`, [nome]);
+    if (existingName) {
+      return res.status(409).json({ erro: "Já existe um participante com esse nome." });
+    }
+
+    const phone = whatsapp ? normalizePhone(whatsapp) : null;
+    if (phone) {
+      const existingPhone = await queryOne(`SELECT id FROM bolao_participants WHERE whatsapp = $1`, [phone]);
+      if (existingPhone) {
+        return res.status(409).json({ erro: "Já existe um participante com esse WhatsApp." });
+      }
+    }
 
     const champion = championPick ? String(championPick).trim().slice(0, 100) : null;
     const topScorer = topScorerPick ? String(topScorerPick).trim().slice(0, 100) : null;
 
-    const updated = await queryOne(
-      `UPDATE bolao_users SET "championPick" = $1, "topScorerPick" = $2 WHERE id = $3 RETURNING *`,
-      [champion || null, topScorer || null, req.user.id]
+    const participant = await queryOne(
+      `INSERT INTO bolao_participants (name, photo, whatsapp, "championPick", "topScorerPick")
+       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+      [nome, photo || null, phone || null, champion, topScorer]
     );
 
-    res.json({ user: sanitizeUser(updated) });
+    res.json({ participant: sanitizeParticipant(participant) });
   } catch (e) {
-    console.error("PUT /api/profile/special-pick", e);
-    res.status(500).json({ erro: "Erro ao salvar palpite especial." });
+    console.error("POST /api/admin/participants", e);
+    res.status(500).json({ erro: "Erro ao criar participante." });
   }
 });
 
-// ─── Gestão de usuários (somente admin) ────────────────────────────────────────
-
-app.get("/api/admin/users", authMiddleware, adminMiddleware, async (req, res) => {
-  try {
-    const users = await query(
-      `SELECT id, "displayName", "firstName", "lastName", "isAdmin", "createdAt"
-       FROM bolao_users ORDER BY "displayName"`
-    );
-    res.json({ users });
-  } catch (e) {
-    console.error("GET /api/admin/users", e);
-    res.status(500).json({ erro: "Erro ao carregar usuários." });
-  }
-});
-
-app.post("/api/admin/users/:id/reset-password", authMiddleware, adminMiddleware, async (req, res) => {
+app.put("/api/admin/participants/:id", authMiddleware, adminMiddleware, async (req, res) => {
   try {
     const id = Number(req.params.id);
-    const user = await queryOne(`SELECT id, "displayName" FROM bolao_users WHERE id = $1`, [id]);
-    if (!user) return res.status(404).json({ erro: "Usuário não encontrado." });
+    const existing = await queryOne(`SELECT * FROM bolao_participants WHERE id = $1`, [id]);
+    if (!existing) return res.status(404).json({ erro: "Participante não encontrado." });
 
-    const novaSenha = generateRandomPassword();
-    const passwordHash = await bcrypt.hash(novaSenha, 10);
-    await query(`UPDATE bolao_users SET "passwordHash" = $1 WHERE id = $2`, [passwordHash, id]);
+    const { name, photo, whatsapp, championPick, topScorerPick } = req.body || {};
 
-    res.json({ displayName: user.displayName, password: novaSenha });
+    let novoNome = existing.name;
+    if (name !== undefined) {
+      novoNome = normalizeDisplayNameInput(name);
+      if (!novoNome) {
+        return res.status(400).json({ erro: "Informe o nome do participante." });
+      }
+      if (novoNome.toLowerCase() !== existing.name.toLowerCase()) {
+        const existingName = await queryOne(
+          `SELECT id FROM bolao_participants WHERE LOWER(name) = LOWER($1) AND id != $2`,
+          [novoNome, id]
+        );
+        if (existingName) {
+          return res.status(409).json({ erro: "Já existe um participante com esse nome." });
+        }
+      }
+    }
+
+    let novaFoto = existing.photo;
+    if (photo !== undefined) {
+      if (photo && typeof photo === "string" && photo.length > 1_500_000) {
+        return res.status(400).json({ erro: "Foto muito grande." });
+      }
+      novaFoto = photo || null;
+    }
+
+    let novoWhatsapp = existing.whatsapp;
+    if (whatsapp !== undefined) {
+      novoWhatsapp = whatsapp ? normalizePhone(whatsapp) : null;
+      if (novoWhatsapp && novoWhatsapp !== existing.whatsapp) {
+        const existingPhone = await queryOne(`SELECT id FROM bolao_participants WHERE whatsapp = $1 AND id != $2`, [novoWhatsapp, id]);
+        if (existingPhone) {
+          return res.status(409).json({ erro: "Já existe um participante com esse WhatsApp." });
+        }
+      }
+    }
+
+    const champion = championPick !== undefined
+      ? (championPick ? String(championPick).trim().slice(0, 100) : null)
+      : existing.championPick;
+    const topScorer = topScorerPick !== undefined
+      ? (topScorerPick ? String(topScorerPick).trim().slice(0, 100) : null)
+      : existing.topScorerPick;
+
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+
+      if (novoNome !== existing.name) {
+        await client.query(`UPDATE bolao_predictions SET participant = $1 WHERE participant = $2`, [novoNome, existing.name]);
+      }
+
+      const updated = await client.query(
+        `UPDATE bolao_participants SET name = $1, photo = $2, whatsapp = $3, "championPick" = $4, "topScorerPick" = $5
+         WHERE id = $6 RETURNING *`,
+        [novoNome, novaFoto, novoWhatsapp, champion, topScorer, id]
+      );
+
+      await client.query("COMMIT");
+      res.json({ participant: sanitizeParticipant(updated.rows[0]) });
+    } catch (e) {
+      await client.query("ROLLBACK");
+      throw e;
+    } finally {
+      client.release();
+    }
   } catch (e) {
-    console.error("POST /api/admin/users/:id/reset-password", e);
-    res.status(500).json({ erro: "Erro ao redefinir senha." });
+    console.error("PUT /api/admin/participants/:id", e);
+    res.status(500).json({ erro: "Erro ao atualizar participante." });
+  }
+});
+
+app.delete("/api/admin/participants/:id", authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const existing = await queryOne(`SELECT * FROM bolao_participants WHERE id = $1`, [id]);
+    if (!existing) return res.status(404).json({ erro: "Participante não encontrado." });
+
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      await client.query(`DELETE FROM bolao_predictions WHERE participant = $1`, [existing.name]);
+      await client.query(`DELETE FROM bolao_participants WHERE id = $1`, [id]);
+      await client.query("COMMIT");
+      res.json({ ok: true });
+    } catch (e) {
+      await client.query("ROLLBACK");
+      throw e;
+    } finally {
+      client.release();
+    }
+  } catch (e) {
+    console.error("DELETE /api/admin/participants/:id", e);
+    res.status(500).json({ erro: "Erro ao excluir participante." });
   }
 });
 
@@ -501,6 +582,88 @@ app.put("/api/settings/special", authMiddleware, adminMiddleware, async (req, re
   } catch (e) {
     console.error("PUT /api/settings/special", e);
     res.status(500).json({ erro: "Erro ao salvar configurações." });
+  }
+});
+
+// ─── Integração N8N ─────────────────────────────────────────────────────────────
+
+app.get("/api/n8n/current-match", n8nMiddleware, async (req, res) => {
+  try {
+    const setting = await queryOne(`SELECT value FROM bolao_settings WHERE key = 'selectedMatchId'`);
+    const matchId = setting?.value ? Number(setting.value) : null;
+    if (!matchId) return res.json({ matchId: null });
+
+    const match = await queryOne(`SELECT * FROM bolao_matches WHERE id = $1`, [matchId]);
+    if (!match) return res.json({ matchId: null });
+
+    res.json({
+      matchId: match.id,
+      group: match.group,
+      teamA: match.teamA,
+      teamB: match.teamB,
+      isFinished: Boolean(match.isFinished),
+    });
+  } catch (e) {
+    console.error("GET /api/n8n/current-match", e);
+    res.status(500).json({ erro: "Erro ao carregar jogo do dia." });
+  }
+});
+
+app.post("/api/n8n/predictions", n8nMiddleware, async (req, res) => {
+  try {
+    const { whatsapp, scoreA, scoreB, matchId } = req.body || {};
+
+    const phone = normalizePhone(whatsapp);
+    if (!phone) {
+      return res.status(400).json({ erro: "Informe o número de WhatsApp." });
+    }
+
+    const participant = await queryOne(`SELECT * FROM bolao_participants WHERE whatsapp = $1`, [phone]);
+    if (!participant) {
+      return res.status(404).json({ erro: "Participante não encontrado para esse WhatsApp." });
+    }
+
+    let targetMatchId = matchId != null ? Number(matchId) : null;
+    if (!targetMatchId) {
+      const setting = await queryOne(`SELECT value FROM bolao_settings WHERE key = 'selectedMatchId'`);
+      targetMatchId = setting?.value ? Number(setting.value) : null;
+    }
+    if (!targetMatchId) {
+      return res.status(400).json({ erro: "Nenhum jogo selecionado no momento." });
+    }
+
+    const match = await queryOne(`SELECT * FROM bolao_matches WHERE id = $1`, [targetMatchId]);
+    if (!match) {
+      return res.status(404).json({ erro: "Jogo não encontrado." });
+    }
+    if (match.isFinished) {
+      return res.status(409).json({ erro: "Esse jogo já foi encerrado." });
+    }
+
+    const placarA = Number(scoreA);
+    const placarB = Number(scoreB);
+    if (!Number.isInteger(placarA) || !Number.isInteger(placarB) || placarA < 0 || placarA > 99 || placarB < 0 || placarB > 99) {
+      return res.status(400).json({ erro: "Placar inválido. Use números inteiros entre 0 e 99." });
+    }
+
+    await query(
+      `INSERT INTO bolao_predictions ("matchId", participant, "scoreA", "scoreB")
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT ("matchId", participant) DO UPDATE SET
+         "scoreA" = EXCLUDED."scoreA",
+         "scoreB" = EXCLUDED."scoreB"`,
+      [match.id, participant.name, placarA, placarB]
+    );
+
+    res.json({
+      ok: true,
+      participant: participant.name,
+      match: { teamA: match.teamA, teamB: match.teamB, group: match.group },
+      prediction: { scoreA: placarA, scoreB: placarB },
+    });
+  } catch (e) {
+    console.error("POST /api/n8n/predictions", e);
+    res.status(500).json({ erro: "Erro ao salvar palpite." });
   }
 });
 
