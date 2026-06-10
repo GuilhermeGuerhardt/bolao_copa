@@ -1,8 +1,4 @@
-import {
-  STORAGE_KEY,
-  createParticipants,
-  buildAllMatches
-} from './config.js';
+import { buildAllMatches } from './config.js';
 
 export function toNullableNumber(value) {
   if (value === null || value === undefined || value === '') return null;
@@ -11,14 +7,9 @@ export function toNullableNumber(value) {
 }
 
 export function normalizeState(raw) {
-  const initialParticipants = createParticipants();
   const allMatches = buildAllMatches();
-
-  const participants = Array.isArray(raw?.participants) && raw.participants.length
-    ? raw.participants.map(p => ({ name: String(p?.name ?? '').trim() })).filter(p => p.name)
-    : initialParticipants;
-
   const matchMap = new Map(allMatches.map(match => [match.id, match]));
+
   const matches = Array.isArray(raw?.matches)
     ? raw.matches.filter(match => matchMap.has(match.id)).map(match => {
         const base = matchMap.get(match.id);
@@ -29,16 +20,16 @@ export function normalizeState(raw) {
           teamB: base.teamB,
           realScoreA: toNullableNumber(match.realScoreA),
           realScoreB: toNullableNumber(match.realScoreB),
-          isFinished: Boolean(match.isFinished)
+          isFinished: Boolean(match.isFinished),
+          finishedAt: match.finishedAt ?? null
         };
       })
     : [];
 
-  const validParticipantNames = new Set(participants.map(p => p.name));
   const validMatchIds = new Set(matches.map(m => m.id));
   const predictions = Array.isArray(raw?.predictions)
     ? raw.predictions
-        .filter(p => validMatchIds.has(p.matchId) && validParticipantNames.has(p.participant))
+        .filter(p => validMatchIds.has(p.matchId))
         .map(p => ({
           matchId: Number(p.matchId),
           participant: String(p.participant),
@@ -52,38 +43,29 @@ export function normalizeState(raw) {
     selectedMatchId = matches.length ? matches[0].id : null;
   }
 
+  const participants = Array.isArray(raw?.participants)
+    ? raw.participants
+        .map(p => ({
+          name: String(p?.name ?? '').trim(),
+          championPick: p?.championPick ?? null,
+          topScorerPick: p?.topScorerPick ?? null
+        }))
+        .filter(p => p.name)
+    : [];
+
+  const settings = {
+    actualChampion: raw?.settings?.actualChampion ?? null,
+    actualTopScorer: raw?.settings?.actualTopScorer ?? null,
+    championBonusPoints: Number(raw?.settings?.championBonusPoints ?? 0),
+    topScorerBonusPoints: Number(raw?.settings?.topScorerBonusPoints ?? 0)
+  };
+
   return {
-    storageKey: STORAGE_KEY,
-    isAdmin: Boolean(raw?.isAdmin),
-    participants,
     allMatches,
     matches,
     predictions,
-    selectedMatchId
-  };
-}
-
-export function loadSavedState() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch (error) {
-    console.error('Erro ao ler localStorage:', error);
-    return null;
-  }
-}
-
-export function createInitialState() {
-  const saved = loadSavedState();
-  if (saved) return normalizeState(saved);
-
-  return {
-    storageKey: STORAGE_KEY,
-    isAdmin: false,
-    participants: createParticipants(),
-    allMatches: buildAllMatches(),
-    matches: [],
-    predictions: [],
-    selectedMatchId: null
+    selectedMatchId,
+    participants,
+    settings
   };
 }

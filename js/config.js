@@ -1,10 +1,3 @@
-export const STORAGE_KEY = 'bolaoData_2026_copa_v1';
-
-export const PARTICIPANT_NAMES = [
-  'Yuri', 'Waldir', 'Rodrigo', 'Lisandra', 'Thiago', 'Guilherme',
-  'Edy', 'Philipe', 'Rapha Fontes', 'Ribeiro', 'Carol'
-];
-
 export const GROUPS = [
   { name: 'A', teams: ['México', 'África do Sul', 'Coreia do Sul', 'Tchéquia'] },
   { name: 'B', teams: ['Canadá', 'Suíça', 'Catar', 'Bósnia'] },
@@ -20,11 +13,9 @@ export const GROUPS = [
   { name: 'L', teams: ['Inglaterra', 'Croácia', 'Gana', 'Panamá'] }
 ];
 
-const GROUP_MATCH_PAIRS = [[0, 1], [2, 3], [0, 2], [1, 3], [0, 3], [1, 2]];
+export const ALL_TEAMS = GROUPS.flatMap(group => group.teams).sort((a, b) => a.localeCompare(b, 'pt-BR'));
 
-export function createParticipants() {
-  return PARTICIPANT_NAMES.map(name => ({ name }));
-}
+const GROUP_MATCH_PAIRS = [[0, 1], [2, 3], [0, 2], [1, 3], [0, 3], [1, 2]];
 
 export function buildAllMatches() {
   const allMatches = [];

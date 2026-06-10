@@ -13,327 +13,548 @@
 <body>
   <div id="app" class="min-h-screen pb-10">
 
-    <!-- Cabeçalho -->
-    <header class="sticky top-0 z-20 border-b border-yellow-500/20 backdrop-blur-xl" style="background: rgba(3,12,8,.78)">
-      <div class="max-w-7xl mx-auto px-4 md:px-6 py-4 flex items-center justify-between gap-4">
-        <div class="flex items-center gap-4 min-w-0">
-          <div class="relative shrink-0">
-            <div class="absolute -inset-1 rounded-2xl bg-yellow-400/20 blur-md"></div>
-            <img src="https://s3-sa-east-1.amazonaws.com/projetos-artes/fullsize%2F2019%2F05%2F23%2F11%2FLogo-256995_1874_115641677_488885145.jpg" alt="Logo" class="relative h-14 w-14 md:h-16 md:w-16 rounded-2xl border border-yellow-400/50 object-cover bg-black" />
+    <!-- Tela de login / cadastro -->
+    <div v-if="!user" class="min-h-screen flex items-center justify-center px-4 py-10">
+      <div class="relative w-full max-w-md">
+        <div class="absolute -inset-1 rounded-[32px] bg-yellow-400/10 blur-2xl"></div>
+        <div class="relative glass card-glow rounded-[28px] p-6 md:p-8">
+          <div class="text-center mb-6">
+            <img src="https://s3-sa-east-1.amazonaws.com/projetos-artes/fullsize%2F2019%2F05%2F23%2F11%2FLogo-256995_1874_115641677_488885145.jpg" alt="Logo" class="h-16 w-16 rounded-2xl border border-yellow-400/50 object-cover bg-black mx-auto mb-3" />
+            <p class="text-[11px] font-bold tracking-[0.35em] text-yellow-300 uppercase">Edição Copa</p>
+            <h1 class="text-2xl md:text-3xl font-bold text-white">Palpites dos Imparáveis</h1>
           </div>
-          <div class="min-w-0">
-            <p class="text-[11px] md:text-xs font-bold tracking-[0.35em] text-yellow-300 uppercase">Edição Copa</p>
-            <h1 class="text-xl md:text-3xl leading-tight font-bold text-white truncate">Palpites dos Imparáveis</h1>
-            <p class="text-xs md:text-sm subtle-text truncate">Painel local com salvamento automático na sua máquina</p>
-          </div>
-        </div>
 
-        <div class="flex items-center gap-3 shrink-0">
-          <div class="hidden md:flex items-center gap-2 px-3 py-2 rounded-full hero-badge text-xs font-bold">
-            <span>🏆</span>
-            <span>{{ totalFinishedMatches }} jogos encerrados</span>
+          <div class="flex gap-2 mb-6 p-1 rounded-2xl bg-black/30 border border-white/10">
+            <button @click="authMode = 'login'; authError = ''" class="flex-1 py-2 rounded-xl font-black text-sm transition" :class="authMode === 'login' ? 'bg-yellow-500 text-black' : 'text-white/70 hover:text-white'">Entrar</button>
+            <button @click="authMode = 'register'; authError = ''" class="flex-1 py-2 rounded-xl font-black text-sm transition" :class="authMode === 'register' ? 'bg-yellow-500 text-black' : 'text-white/70 hover:text-white'">Criar conta</button>
           </div>
-          <button @click="toggleAdmin" class="px-4 md:px-6 py-3 rounded-2xl bg-yellow-500 text-black font-black shadow-lg shadow-yellow-600/15 hover:bg-yellow-400 transition">
-            {{ isAdmin ? '📺 Ver transmissão' : '⚙️ Modo admin' }}
-          </button>
-        </div>
-      </div>
-    </header>
 
-    <!-- Painel principal -->
-    <section class="max-w-7xl mx-auto px-4 md:px-6 pt-6 md:pt-8">
-      <div class="relative overflow-hidden rounded-[28px] glass card-glow px-5 md:px-8 py-6 md:py-8">
-        <div class="field-line"></div>
-        <div class="relative z-10 grid grid-cols-1 xl:grid-cols-[1.4fr_.8fr] gap-6 items-center">
-          <div>
-            <div class="flex flex-wrap items-center gap-2 mb-4">
-              <span class="chip px-3 py-1 text-xs font-bold text-yellow-300">⚽ Copa vibes</span>
-              <span class="chip px-3 py-1 text-xs font-bold" :class="activeMatch && activeMatch.isFinished ? 'status-live' : 'status-open'">
-                {{ activeMatch && activeMatch.isFinished ? 'Finalizado' : 'Aberto para palpites' }}
-              </span>
+          <form v-if="authMode === 'login'" @submit.prevent="fazerLogin" class="space-y-3">
+            <input v-model="loginForm.displayName" type="text" placeholder="Nome de exibição" class="w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 text-white font-bold outline-none focus:border-yellow-400/70" />
+            <input v-model="loginForm.password" type="password" placeholder="Senha" class="w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 text-white font-bold outline-none focus:border-yellow-400/70" />
+            <button type="submit" :disabled="authLoading" class="w-full py-3 rounded-2xl bg-yellow-500 text-black font-black hover:bg-yellow-400 transition disabled:opacity-60">
+              {{ authLoading ? 'Entrando...' : 'Entrar' }}
+            </button>
+          </form>
+
+          <form v-else @submit.prevent="fazerRegistro" class="space-y-3">
+            <div class="grid grid-cols-2 gap-3">
+              <input v-model="registerForm.firstName" type="text" placeholder="Nome" class="w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 text-white font-bold outline-none focus:border-yellow-400/70" />
+              <input v-model="registerForm.lastName" type="text" placeholder="Sobrenome" class="w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 text-white font-bold outline-none focus:border-yellow-400/70" />
             </div>
+            <input v-model="registerForm.displayName" type="text" placeholder="Nome de exibição (apelido)" class="w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 text-white font-bold outline-none focus:border-yellow-400/70" />
+            <input v-model="registerForm.password" type="password" placeholder="Senha" class="w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 text-white font-bold outline-none focus:border-yellow-400/70" />
 
-            <h2 class="text-3xl md:text-5xl leading-none mb-3">Painel do Bolão</h2>
-            <p class="text-sm md:text-base subtle-text max-w-2xl">
-              Visual de apresentação em clima de copa, mantendo o salvamento local e sem resetar quando você apertar F5.
-            </p>
-
-            <div class="mt-6 grid grid-cols-2 md:grid-cols-4 gap-3">
-              <div class="glass rounded-2xl p-4 border border-white/5">
-                <p class="text-[11px] uppercase tracking-[0.2em] text-gray-400">Participantes</p>
-                <p class="text-2xl font-black mt-1">{{ participants.length }}</p>
-              </div>
-              <div class="glass rounded-2xl p-4 border border-white/5">
-                <p class="text-[11px] uppercase tracking-[0.2em] text-gray-400">Jogos ativos</p>
-                <p class="text-2xl font-black mt-1">{{ matches.length }}</p>
-              </div>
-              <div class="glass rounded-2xl p-4 border border-white/5">
-                <p class="text-[11px] uppercase tracking-[0.2em] text-gray-400">Encerrados</p>
-                <p class="text-2xl font-black mt-1 text-yellow-300">{{ totalFinishedMatches }}</p>
-              </div>
-              <div class="glass rounded-2xl p-4 border border-white/5">
-                <p class="text-[11px] uppercase tracking-[0.2em] text-gray-400">Líder atual</p>
-                <p class="text-base md:text-lg font-black mt-1 truncate">{{ ranking[0] ? ranking[0].name : '—' }}</p>
-              </div>
-            </div>
-          </div>
-
-          <div class="glass rounded-[28px] p-5 md:p-6 border border-yellow-400/15">
-            <p class="text-xs font-bold text-yellow-300 tracking-[0.25em] mb-3">Partida em destaque</p>
-            <div v-if="activeMatch">
-              <div class="flex items-center justify-between gap-3 text-center">
-                <div class="flex-1">
-                  <div class="team-pill rounded-2xl px-3 py-4">
-                    <p class="text-[11px] uppercase text-green-300 mb-1">Casa</p>
-                    <p class="font-black text-lg md:text-xl">{{ activeMatch.teamA }}</p>
-                  </div>
-                </div>
-                <div class="shrink-0 flex items-center gap-2 px-2">
-                  <div class="score-box">{{ exibirPlacar(activeMatch.realScoreA) }}</div>
-                  <span class="text-yellow-400 font-black text-xl">X</span>
-                  <div class="score-box">{{ exibirPlacar(activeMatch.realScoreB) }}</div>
-                </div>
-                <div class="flex-1">
-                  <div class="team-pill rounded-2xl px-3 py-4">
-                    <p class="text-[11px] uppercase text-sky-300 mb-1">Visitante</p>
-                    <p class="font-black text-lg md:text-xl">{{ activeMatch.teamB }}</p>
-                  </div>
-                </div>
-              </div>
-              <div class="mt-4 flex justify-between items-center text-xs subtle-text">
-                <span>{{ activeMatch.group }}</span>
-                <span class="chip px-3 py-1" :class="activeMatch.isFinished ? 'status-live' : 'status-open'">
-                  {{ activeMatch.isFinished ? 'Resultado confirmado' : 'Aguardando resultado' }}
-                </span>
-              </div>
-            </div>
-            <div v-else class="text-sm subtle-text">Adicione ou selecione um jogo no modo admin para destacar aqui.</div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Modo admin -->
-    <main v-if="isAdmin" class="max-w-7xl mx-auto px-4 md:px-6 pt-6">
-      <div class="grid grid-cols-1 xl:grid-cols-[1fr_1.2fr] gap-6">
-
-        <section class="glass rounded-[28px] p-5 md:p-6 card-glow">
-          <div class="flex items-center justify-between gap-3 mb-5">
-            <div>
-              <h3 class="text-xl text-yellow-300">Central de jogos</h3>
-              <p class="text-sm subtle-text">Selecione partidas do catálogo para entrar na apresentação.</p>
-            </div>
-            <span class="chip px-3 py-1 text-xs font-bold">{{ allMatches.length }} no catálogo</span>
-          </div>
-
-          <div class="admin-scroll pr-2 space-y-2">
-            <div v-for="m in allMatches" :key="m.id" class="rounded-2xl border border-white/6 bg-white/5 px-3 py-3 flex items-center justify-between gap-3 hover:bg-white/10 transition">
-              <div class="min-w-0">
-                <p class="text-[11px] uppercase tracking-[0.2em] text-gray-400 mb-1">{{ m.group }}</p>
-                <p class="font-bold truncate">{{ m.teamA }} <span class="text-yellow-400">x</span> {{ m.teamB }}</p>
-              </div>
-              <button @click="selectMatch(m)" class="shrink-0 px-4 py-2 rounded-xl font-black text-sm transition" :class="matches.some(x => x.id === m.id) ? 'bg-sky-500 text-slate-950 hover:bg-sky-400' : 'bg-green-500 text-slate-950 hover:bg-green-400'">
-                {{ matches.some(x => x.id === m.id) ? 'Editar' : '+ Adicionar' }}
-              </button>
-            </div>
-          </div>
-        </section>
-
-        <section class="glass rounded-[28px] p-5 md:p-6 card-glow">
-          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
-            <div>
-              <h3 class="text-xl text-yellow-300">Sala de controle</h3>
-              <p class="text-sm subtle-text">Edite placar real e os palpites sem perder nada no F5.</p>
-            </div>
-            <div class="flex flex-wrap gap-2">
-              <button @click="exportarBackup" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-black text-sm">💾 Backup</button>
-              <button @click="limparSomentePlacar" class="px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-black text-sm">🧹 Limpar</button>
-            </div>
-          </div>
-
-          <select v-model.number="selectedMatchId" class="w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 text-white font-bold mb-5 outline-none focus:border-yellow-400/70">
-            <option :value="null">Selecione um jogo...</option>
-            <option v-for="m in matches" :key="m.id" :value="m.id">{{ m.group }} - {{ m.teamA }} x {{ m.teamB }}</option>
-          </select>
-
-          <div v-if="activeMatch" class="rounded-[24px] bg-black/35 border border-white/8 p-4 md:p-5">
-            <div class="flex items-center justify-between gap-4 flex-wrap mb-5">
-              <div>
-                <p class="text-xs uppercase tracking-[0.25em] text-yellow-300">Jogo selecionado</p>
-                <h4 class="text-xl md:text-2xl">{{ activeMatch.teamA }} <span class="text-yellow-400">x</span> {{ activeMatch.teamB }}</h4>
-                <p class="text-sm subtle-text mt-1">{{ activeMatch.group }}</p>
-              </div>
-              <label class="chip px-4 py-2 text-sm font-bold flex items-center gap-2 cursor-pointer" :class="activeMatch.isFinished ? 'status-live' : 'status-open'">
-                <input type="checkbox" v-model="activeMatch.isFinished" />
-                {{ activeMatch.isFinished ? 'Jogo encerrado' : 'Jogo em aberto' }}
+            <div class="flex items-center gap-3">
+              <label class="shrink-0 cursor-pointer px-4 py-3 rounded-2xl border border-white/10 text-white font-bold text-sm hover:bg-white/5 transition">
+                📷 Foto (opcional)
+                <input type="file" accept="image/*" @change="onPhotoSelected" class="hidden" />
               </label>
+              <img v-if="registerForm.photo" :src="registerForm.photo" class="w-10 h-10 rounded-xl object-cover border border-white/10" />
+              <button v-if="registerForm.photo" type="button" @click="registerForm.photo = null" class="text-xs text-red-400 hover:underline">Remover</button>
             </div>
 
-            <div class="grid grid-cols-[1fr_auto_1fr] gap-3 items-center mb-6">
-              <div class="rounded-2xl bg-green-500/10 border border-green-400/15 p-4 text-center">
-                <p class="text-xs uppercase tracking-[0.2em] text-green-300 mb-2">{{ activeMatch.teamA }}</p>
-                <input type="number" min="0" v-model.number="activeMatch.realScoreA" class="score-input mx-auto" />
-              </div>
-              <div class="text-yellow-400 font-black text-2xl md:text-4xl">X</div>
-              <div class="rounded-2xl bg-sky-500/10 border border-sky-400/15 p-4 text-center">
-                <p class="text-xs uppercase tracking-[0.2em] text-sky-300 mb-2">{{ activeMatch.teamB }}</p>
-                <input type="number" min="0" v-model.number="activeMatch.realScoreB" class="score-input mx-auto" />
-              </div>
-            </div>
+            <button type="submit" :disabled="authLoading" class="w-full py-3 rounded-2xl bg-yellow-500 text-black font-black hover:bg-yellow-400 transition disabled:opacity-60">
+              {{ authLoading ? 'Criando...' : 'Criar conta' }}
+            </button>
+          </form>
 
-            <div>
-              <div class="flex items-center justify-between gap-3 mb-3">
-                <h5 class="text-sm text-yellow-300">Palpites dos participantes</h5>
-                <span class="text-xs subtle-text">{{ activeMatchPredictions.length }} palpites</span>
-              </div>
-              <div class="max-h-[360px] overflow-y-auto space-y-2 pr-1">
-                <div v-for="pred in activeMatchPredictions" :key="pred.participant" class="rounded-2xl bg-white/[0.04] border border-white/6 px-3 py-3 flex items-center justify-between gap-3">
-                  <div class="min-w-0">
-                    <p class="font-bold truncate">{{ pred.participant }}</p>
-                    <p class="text-[11px] subtle-text">Palpite individual</p>
-                  </div>
-                  <div class="flex items-center gap-2 shrink-0">
-                    <input type="number" min="0" v-model.number="pred.scoreA" class="score-input !w-[56px] !text-xl !py-2" />
-                    <span class="text-yellow-400 font-black">X</span>
-                    <input type="number" min="0" v-model.number="pred.scoreB" class="score-input !w-[56px] !text-xl !py-2" />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div v-else class="rounded-[24px] bg-black/35 border border-dashed border-white/12 p-8 text-center subtle-text">
-            Escolha um jogo para editar os dados do painel.
-          </div>
-        </section>
-      </div>
-    </main>
-
-    <!-- Modo transmissão -->
-    <main v-else class="max-w-7xl mx-auto px-4 md:px-6 pt-6 space-y-6">
-      <section class="grid grid-cols-1 xl:grid-cols-[1.2fr_.8fr] gap-6">
-
-        <div class="glass rounded-[28px] p-5 md:p-6 card-glow">
-          <div class="flex items-center justify-between gap-3 flex-wrap mb-4">
-            <div>
-              <h3 class="text-xl text-yellow-300">Transmissão da rodada</h3>
-              <p class="text-sm subtle-text">Escolha a partida para mostrar os palpites na tela.</p>
-            </div>
-            <span class="chip px-3 py-1 text-xs font-bold">Auto save ativo</span>
-          </div>
-
-          <select v-model.number="selectedMatchId" class="w-full rounded-2xl bg-black/40 border border-yellow-400/25 px-4 py-4 text-white text-lg font-black outline-none focus:border-yellow-400/70 mb-5">
-            <option v-if="matches.length === 0" :value="null">Nenhum jogo selecionado</option>
-            <option v-for="m in matches" :key="m.id" :value="m.id">{{ m.group }} | {{ m.teamA }} x {{ m.teamB }}</option>
-          </select>
-
-          <div v-if="activeMatch" class="rounded-[24px] bg-black/35 border border-white/8 p-4 md:p-5">
-            <div class="flex items-center justify-between gap-3 flex-wrap mb-5">
-              <div>
-                <p class="text-xs uppercase tracking-[0.25em] text-yellow-300">Jogo em exibição</p>
-                <h4 class="text-2xl md:text-3xl">{{ activeMatch.teamA }} <span class="text-yellow-400">x</span> {{ activeMatch.teamB }}</h4>
-                <p class="subtle-text text-sm mt-1">{{ activeMatch.group }}</p>
-              </div>
-              <span class="chip px-4 py-2 text-sm font-bold" :class="activeMatch.isFinished ? 'status-live' : 'status-open'">
-                {{ activeMatch.isFinished ? 'Finalizado' : 'Em andamento' }}
-              </span>
-            </div>
-
-            <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
-              <div v-for="pred in activeMatchPredictions" :key="pred.participant" class="rounded-[22px] p-4 border border-white/8 bg-gradient-to-b from-white/[0.08] to-white/[0.03] shadow-xl">
-                <div class="flex items-start justify-between gap-3 mb-3">
-                  <div class="min-w-0">
-                    <p class="text-yellow-300 font-black truncate text-sm md:text-base">{{ pred.participant }}</p>
-                    <p class="text-[11px] subtle-text">Palpite enviado</p>
-                  </div>
-                  <span class="chip px-2 py-1 text-[10px] font-bold">⚽</span>
-                </div>
-                <div class="flex justify-between text-[10px] subtle-text mb-2 gap-2">
-                  <span class="truncate">{{ activeMatch.teamA }}</span>
-                  <span class="truncate text-right">{{ activeMatch.teamB }}</span>
-                </div>
-                <div class="flex justify-center items-center gap-2">
-                  <div class="score-box !min-w-[64px] !min-h-[56px] !text-2xl">{{ exibirPlacar(pred.scoreA) }}</div>
-                  <span class="text-yellow-400 font-black">X</span>
-                  <div class="score-box !min-w-[64px] !min-h-[56px] !text-2xl">{{ exibirPlacar(pred.scoreB) }}</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div v-else class="rounded-[24px] bg-black/35 border border-dashed border-white/12 p-8 text-center subtle-text">
-            Adicione jogos no modo admin para começar a transmissão.
-          </div>
-        </div>
-
-        <div class="space-y-6">
-          <section class="glass rounded-[28px] p-5 md:p-6 card-glow">
-            <div class="flex items-center justify-between gap-3 mb-4">
-              <div>
-                <h3 class="text-xl text-yellow-300">Pódio</h3>
-                <p class="text-sm subtle-text">Os 3 melhores do momento.</p>
-              </div>
-              <span class="chip px-3 py-1 text-xs font-bold">Top 3</span>
-            </div>
-            <div class="grid grid-cols-1 gap-3">
-              <div v-for="(item, idx) in podium" :key="item.name" class="rounded-2xl p-4 border border-white/8" :class="idx === 0 ? 'podium-gold' : idx === 1 ? 'podium-silver' : 'podium-bronze'">
-                <div class="flex items-center justify-between gap-3">
-                  <div class="flex items-center gap-3 min-w-0">
-                    <div class="w-11 h-11 rounded-2xl bg-black/30 flex items-center justify-center font-black text-lg">{{ idx + 1 }}º</div>
-                    <div class="min-w-0">
-                      <p class="font-black truncate">{{ item.name }}</p>
-                      <p class="text-xs subtle-text">Pontuação atual</p>
-                    </div>
-                  </div>
-                  <div class="text-xl font-black text-yellow-300">{{ item.points }} pts</div>
-                </div>
-              </div>
-              <div v-if="podium.length === 0" class="text-sm subtle-text">Sem dados ainda.</div>
-            </div>
-          </section>
-
-          <section class="glass rounded-[28px] p-5 md:p-6 card-glow">
-            <div class="flex items-center justify-between gap-3 mb-4">
-              <div>
-                <h3 class="text-xl text-yellow-300">Ranking geral</h3>
-                <p class="text-sm subtle-text">Classificação completa do bolão.</p>
-              </div>
-              <span class="chip px-3 py-1 text-xs font-bold">{{ ranking.length }} nomes</span>
-            </div>
-            <div>
-              <div v-for="(rank, index) in ranking" :key="rank.name" class="rank-row" :class="index < 3 ? 'bg-white/[0.03]' : ''">
-                <div class="w-11 h-11 rounded-2xl bg-black/35 border border-white/8 flex items-center justify-center font-black text-lg">{{ index + 1 }}º</div>
-                <div class="min-w-0">
-                  <p class="font-black truncate">{{ rank.name }}</p>
-                  <p class="text-xs subtle-text">Participante</p>
-                </div>
-                <div class="text-right font-black text-lg" :class="index === 0 ? 'text-yellow-300' : 'text-green-400'">{{ rank.points }} pts</div>
-              </div>
-            </div>
-          </section>
-        </div>
-      </section>
-    </main>
-
-    <!-- Modal de senha admin -->
-    <div v-if="showAdminModal" class="fixed inset-0 z-50 flex items-center justify-center" style="background:rgba(0,0,0,.7);backdrop-filter:blur(6px)">
-      <div class="glass card-glow rounded-[28px] p-8 w-full max-w-sm mx-4">
-        <h3 class="text-xl text-yellow-300 mb-1">Acesso restrito</h3>
-        <p class="text-sm subtle-text mb-6">Digite a senha para entrar no modo admin.</p>
-        <input
-          v-model="adminPasswordInput"
-          type="password"
-          placeholder="Senha"
-          @keyup.enter="confirmarAdmin"
-          class="w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 text-white font-bold mb-3 outline-none focus:border-yellow-400/70"
-        />
-        <p v-if="adminPasswordError" class="text-red-400 text-sm mb-3">{{ adminPasswordError }}</p>
-        <div class="flex gap-3">
-          <button @click="cancelarAdmin" class="flex-1 py-3 rounded-2xl border border-white/10 text-white font-black hover:bg-white/5 transition">Cancelar</button>
-          <button @click="confirmarAdmin" class="flex-1 py-3 rounded-2xl bg-yellow-500 text-black font-black hover:bg-yellow-400 transition">Entrar</button>
+          <p v-if="authError" class="text-red-400 text-sm mt-4 text-center">{{ authError }}</p>
         </div>
       </div>
     </div>
+
+    <!-- App principal -->
+    <template v-else>
+      <!-- Cabeçalho -->
+      <header class="sticky top-0 z-20 border-b border-yellow-500/20 backdrop-blur-xl" style="background: rgba(3,12,8,.78)">
+        <div class="max-w-7xl mx-auto px-4 md:px-6 py-4 flex items-center justify-between gap-4">
+          <div class="flex items-center gap-4 min-w-0">
+            <div class="relative shrink-0">
+              <div class="absolute -inset-1 rounded-2xl bg-yellow-400/20 blur-md"></div>
+              <img src="https://s3-sa-east-1.amazonaws.com/projetos-artes/fullsize%2F2019%2F05%2F23%2F11%2FLogo-256995_1874_115641677_488885145.jpg" alt="Logo" class="relative h-14 w-14 md:h-16 md:w-16 rounded-2xl border border-yellow-400/50 object-cover bg-black" />
+            </div>
+            <div class="min-w-0">
+              <p class="text-[11px] md:text-xs font-bold tracking-[0.35em] text-yellow-300 uppercase">Edição Copa</p>
+              <h1 class="text-xl md:text-3xl leading-tight font-bold text-white truncate">Palpites dos Imparáveis</h1>
+              <p class="text-xs md:text-sm subtle-text truncate">Bolão interno Digitrix IT — Copa do Mundo</p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-3 shrink-0">
+            <div class="hidden md:flex items-center gap-2 px-3 py-2 rounded-full hero-badge text-xs font-bold">
+              <span>🏆</span>
+              <span>{{ totalFinishedMatches }} jogos encerrados</span>
+            </div>
+            <div class="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-2xl bg-white/5 border border-white/10">
+              <img v-if="user.photo" :src="user.photo" class="w-9 h-9 rounded-xl object-cover" />
+              <div v-else class="w-9 h-9 rounded-xl bg-yellow-500 text-black font-black flex items-center justify-center">{{ user.displayName.charAt(0).toUpperCase() }}</div>
+              <div class="hidden sm:block min-w-0">
+                <p class="text-sm font-black truncate max-w-[120px]">{{ user.displayName }}</p>
+                <p class="text-[10px] subtle-text">{{ user.isAdmin ? 'Administrador' : 'Participante' }}</p>
+              </div>
+            </div>
+            <button @click="logout" class="px-4 py-3 rounded-2xl border border-white/10 text-white font-black hover:bg-white/5 transition text-sm">Sair</button>
+          </div>
+        </div>
+      </header>
+
+      <!-- Navegação -->
+      <nav class="max-w-7xl mx-auto px-4 md:px-6 pt-4 flex flex-wrap gap-2">
+        <button @click="view = 'transmissao'" class="px-4 py-2 rounded-2xl font-black text-sm transition" :class="view === 'transmissao' ? 'bg-yellow-500 text-black' : 'glass text-white/80 hover:text-white'">📺 Transmissão</button>
+        <button v-if="!user.isAdmin" @click="view = 'palpites'" class="px-4 py-2 rounded-2xl font-black text-sm transition" :class="view === 'palpites' ? 'bg-yellow-500 text-black' : 'glass text-white/80 hover:text-white'">📝 Meus palpites</button>
+        <button @click="abrirPerfil()" class="px-4 py-2 rounded-2xl font-black text-sm transition" :class="view === 'perfil' ? 'bg-yellow-500 text-black' : 'glass text-white/80 hover:text-white'">👤 Perfil</button>
+        <button v-if="user.isAdmin" @click="view = 'admin'; carregarUsuariosAdmin()" class="px-4 py-2 rounded-2xl font-black text-sm transition" :class="view === 'admin' ? 'bg-yellow-500 text-black' : 'glass text-white/80 hover:text-white'">⚙️ Admin</button>
+      </nav>
+
+      <!-- Painel principal -->
+      <section class="max-w-7xl mx-auto px-4 md:px-6 pt-6 md:pt-8">
+        <div class="relative overflow-hidden rounded-[28px] glass card-glow px-5 md:px-8 py-6 md:py-8">
+          <div class="field-line"></div>
+          <div class="relative z-10 grid grid-cols-1 xl:grid-cols-[1.4fr_.8fr] gap-6 items-center">
+            <div>
+              <div class="flex flex-wrap items-center gap-2 mb-4">
+                <span class="chip px-3 py-1 text-xs font-bold text-yellow-300">⚽ Copa vibes</span>
+                <span class="chip px-3 py-1 text-xs font-bold" :class="activeMatch && activeMatch.isFinished ? 'status-live' : 'status-open'">
+                  {{ activeMatch && activeMatch.isFinished ? 'Finalizado' : 'Aberto para palpites' }}
+                </span>
+              </div>
+
+              <h2 class="text-3xl md:text-5xl leading-none mb-3">Painel do Bolão</h2>
+              <p class="text-sm md:text-base subtle-text max-w-2xl">
+                Acompanhe o ranking, registre seus palpites e fique de olho na transmissão ao vivo.
+              </p>
+
+              <div class="mt-6 grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div class="glass rounded-2xl p-4 border border-white/5">
+                  <p class="text-[11px] uppercase tracking-[0.2em] text-gray-400">Participantes</p>
+                  <p class="text-2xl font-black mt-1">{{ participants.length }}</p>
+                </div>
+                <div class="glass rounded-2xl p-4 border border-white/5">
+                  <p class="text-[11px] uppercase tracking-[0.2em] text-gray-400">Jogos ativos</p>
+                  <p class="text-2xl font-black mt-1">{{ matches.length }}</p>
+                </div>
+                <div class="glass rounded-2xl p-4 border border-white/5">
+                  <p class="text-[11px] uppercase tracking-[0.2em] text-gray-400">Encerrados</p>
+                  <p class="text-2xl font-black mt-1 text-yellow-300">{{ totalFinishedMatches }}</p>
+                </div>
+                <div class="glass rounded-2xl p-4 border border-white/5">
+                  <p class="text-[11px] uppercase tracking-[0.2em] text-gray-400">Líder atual</p>
+                  <p class="text-base md:text-lg font-black mt-1 truncate">{{ ranking[0] ? ranking[0].name : '—' }}</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="glass rounded-[28px] p-5 md:p-6 border border-yellow-400/15">
+              <p class="text-xs font-bold text-yellow-300 tracking-[0.25em] mb-3">Partida em destaque</p>
+              <div v-if="activeMatch">
+                <div class="flex items-center justify-between gap-3 text-center">
+                  <div class="flex-1">
+                    <div class="team-pill rounded-2xl px-3 py-4">
+                      <p class="text-[11px] uppercase text-green-300 mb-1">Casa</p>
+                      <p class="font-black text-lg md:text-xl">{{ activeMatch.teamA }}</p>
+                    </div>
+                  </div>
+                  <div class="shrink-0 flex items-center gap-2 px-2">
+                    <div class="score-box">{{ exibirPlacar(activeMatch.realScoreA) }}</div>
+                    <span class="text-yellow-400 font-black text-xl">X</span>
+                    <div class="score-box">{{ exibirPlacar(activeMatch.realScoreB) }}</div>
+                  </div>
+                  <div class="flex-1">
+                    <div class="team-pill rounded-2xl px-3 py-4">
+                      <p class="text-[11px] uppercase text-sky-300 mb-1">Visitante</p>
+                      <p class="font-black text-lg md:text-xl">{{ activeMatch.teamB }}</p>
+                    </div>
+                  </div>
+                </div>
+                <div class="mt-4 flex justify-between items-center text-xs subtle-text">
+                  <span>{{ activeMatch.group }}</span>
+                  <span class="chip px-3 py-1" :class="activeMatch.isFinished ? 'status-live' : 'status-open'">
+                    {{ activeMatch.isFinished ? 'Resultado confirmado' : 'Aguardando resultado' }}
+                  </span>
+                </div>
+              </div>
+              <div v-else class="text-sm subtle-text">Aguardando o admin liberar um jogo para a transmissão.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Modo admin -->
+      <main v-if="view === 'admin' && user.isAdmin" class="max-w-7xl mx-auto px-4 md:px-6 pt-6">
+        <div class="grid grid-cols-1 xl:grid-cols-[1fr_1.2fr] gap-6">
+
+          <section class="glass rounded-[28px] p-5 md:p-6 card-glow">
+            <div class="flex items-center justify-between gap-3 mb-5">
+              <div>
+                <h3 class="text-xl text-yellow-300">Central de jogos</h3>
+                <p class="text-sm subtle-text">Selecione partidas do catálogo para entrar na apresentação.</p>
+              </div>
+              <span class="chip px-3 py-1 text-xs font-bold">{{ allMatches.length }} no catálogo</span>
+            </div>
+
+            <div class="admin-scroll pr-2 space-y-2">
+              <div v-for="m in allMatches" :key="m.id" class="rounded-2xl border border-white/6 bg-white/5 px-3 py-3 flex items-center justify-between gap-3 hover:bg-white/10 transition">
+                <div class="min-w-0">
+                  <p class="text-[11px] uppercase tracking-[0.2em] text-gray-400 mb-1">{{ m.group }}</p>
+                  <p class="font-bold truncate">{{ m.teamA }} <span class="text-yellow-400">x</span> {{ m.teamB }}</p>
+                </div>
+                <button @click="selectMatch(m)" class="shrink-0 px-4 py-2 rounded-xl font-black text-sm transition" :class="matches.some(x => x.id === m.id) ? 'bg-sky-500 text-slate-950 hover:bg-sky-400' : 'bg-green-500 text-slate-950 hover:bg-green-400'">
+                  {{ matches.some(x => x.id === m.id) ? 'Editar' : '+ Adicionar' }}
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <section class="glass rounded-[28px] p-5 md:p-6 card-glow">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
+              <div>
+                <h3 class="text-xl text-yellow-300">Sala de controle</h3>
+                <p class="text-sm subtle-text">Edite o placar real e o status do jogo selecionado.</p>
+              </div>
+              <div class="flex flex-wrap gap-2">
+                <button @click="exportarBackup" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-black text-sm">💾 Backup</button>
+                <button @click="limparSomentePlacar" class="px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-black text-sm">🧹 Limpar</button>
+              </div>
+            </div>
+
+            <select v-model.number="selectedMatchId" @change="saveAdminState" class="w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 text-white font-bold mb-5 outline-none focus:border-yellow-400/70">
+              <option :value="null">Selecione um jogo...</option>
+              <option v-for="m in matches" :key="m.id" :value="m.id">{{ m.group }} - {{ m.teamA }} x {{ m.teamB }}</option>
+            </select>
+
+            <div v-if="activeMatch" class="rounded-[24px] bg-black/35 border border-white/8 p-4 md:p-5">
+              <div class="flex items-center justify-between gap-4 flex-wrap mb-5">
+                <div>
+                  <p class="text-xs uppercase tracking-[0.25em] text-yellow-300">Jogo selecionado</p>
+                  <h4 class="text-xl md:text-2xl">{{ activeMatch.teamA }} <span class="text-yellow-400">x</span> {{ activeMatch.teamB }}</h4>
+                  <p class="text-sm subtle-text mt-1">{{ activeMatch.group }}</p>
+                </div>
+                <label class="chip px-4 py-2 text-sm font-bold flex items-center gap-2 cursor-pointer" :class="activeMatch.isFinished ? 'status-live' : 'status-open'">
+                  <input type="checkbox" v-model="activeMatch.isFinished" @change="saveAdminState" />
+                  {{ activeMatch.isFinished ? 'Jogo encerrado' : 'Jogo em aberto' }}
+                </label>
+              </div>
+
+              <div class="grid grid-cols-[1fr_auto_1fr] gap-3 items-center mb-2">
+                <div class="rounded-2xl bg-green-500/10 border border-green-400/15 p-4 text-center">
+                  <p class="text-xs uppercase tracking-[0.2em] text-green-300 mb-2">{{ activeMatch.teamA }}</p>
+                  <input type="number" min="0" v-model.number="activeMatch.realScoreA" @change="saveAdminState" class="score-input mx-auto" />
+                </div>
+                <div class="text-yellow-400 font-black text-2xl md:text-4xl">X</div>
+                <div class="rounded-2xl bg-sky-500/10 border border-sky-400/15 p-4 text-center">
+                  <p class="text-xs uppercase tracking-[0.2em] text-sky-300 mb-2">{{ activeMatch.teamB }}</p>
+                  <input type="number" min="0" v-model.number="activeMatch.realScoreB" @change="saveAdminState" class="score-input mx-auto" />
+                </div>
+              </div>
+            </div>
+
+            <div v-else class="rounded-[24px] bg-black/35 border border-dashed border-white/12 p-8 text-center subtle-text">
+              Escolha um jogo para editar os dados do painel.
+            </div>
+          </section>
+        </div>
+
+        <div class="grid grid-cols-1 xl:grid-cols-[1fr_1.2fr] gap-6 mt-6">
+          <section class="glass rounded-[28px] p-5 md:p-6 card-glow">
+            <div class="flex items-center justify-between gap-3 mb-5">
+              <div>
+                <h3 class="text-xl text-yellow-300">Usuários</h3>
+                <p class="text-sm subtle-text">Redefina a senha de um participante caso ele esqueça.</p>
+              </div>
+              <span class="chip px-3 py-1 text-xs font-bold">{{ adminUsers.length }} contas</span>
+            </div>
+
+            <div v-if="resetPasswordInfo" class="rounded-2xl border border-yellow-400/30 bg-yellow-400/10 p-4 mb-4 text-sm">
+              <p class="font-black text-yellow-300 mb-1">Nova senha gerada para {{ resetPasswordInfo.displayName }}</p>
+              <p class="font-mono text-lg">{{ resetPasswordInfo.password }}</p>
+              <p class="subtle-text text-xs mt-1">Anote e repasse ao usuário — essa senha não será exibida novamente.</p>
+              <button @click="resetPasswordInfo = null" class="text-xs text-red-400 hover:underline mt-2">Fechar</button>
+            </div>
+
+            <div class="admin-scroll pr-2 space-y-2">
+              <div v-for="u in adminUsers" :key="u.id" class="rounded-2xl border border-white/6 bg-white/5 px-3 py-3 flex items-center justify-between gap-3">
+                <div class="min-w-0">
+                  <p class="font-bold truncate">{{ u.firstName }} {{ u.lastName }} <span class="subtle-text text-xs">({{ u.displayName }})</span></p>
+                  <p class="text-[11px] subtle-text">{{ u.isAdmin ? 'Administrador' : 'Participante' }}</p>
+                </div>
+                <button @click="redefinirSenha(u)" class="shrink-0 px-4 py-2 rounded-xl font-black text-sm bg-orange-600 hover:bg-orange-500 text-white transition">Redefinir senha</button>
+              </div>
+            </div>
+          </section>
+
+          <section class="glass rounded-[28px] p-5 md:p-6 card-glow">
+            <div class="mb-5">
+              <h3 class="text-xl text-yellow-300">Resultado final</h3>
+              <p class="text-sm subtle-text">Defina o campeão e o artilheiro reais da Copa, e os pontos bônus para quem acertar.</p>
+            </div>
+
+            <div class="space-y-3">
+              <div>
+                <label class="text-[11px] uppercase tracking-[0.2em] text-gray-400 mb-2 block">Campeão real</label>
+                <select v-model="settings.actualChampion" class="w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 text-white font-bold outline-none focus:border-yellow-400/70">
+                  <option :value="null">Ainda não definido</option>
+                  <option v-for="team in ALL_TEAMS" :key="team" :value="team">{{ team }}</option>
+                </select>
+              </div>
+              <div>
+                <label class="text-[11px] uppercase tracking-[0.2em] text-gray-400 mb-2 block">Artilheiro real</label>
+                <input v-model="settings.actualTopScorer" type="text" placeholder="Nome do jogador" class="w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 text-white font-bold outline-none focus:border-yellow-400/70" />
+              </div>
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="text-[11px] uppercase tracking-[0.2em] text-gray-400 mb-2 block">Pontos por acertar campeão</label>
+                  <input v-model.number="settings.championBonusPoints" type="number" min="0" class="w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 text-white font-bold outline-none focus:border-yellow-400/70" />
+                </div>
+                <div>
+                  <label class="text-[11px] uppercase tracking-[0.2em] text-gray-400 mb-2 block">Pontos por acertar artilheiro</label>
+                  <input v-model.number="settings.topScorerBonusPoints" type="number" min="0" class="w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 text-white font-bold outline-none focus:border-yellow-400/70" />
+                </div>
+              </div>
+
+              <p v-if="specialSettingsMessage" class="text-green-400 text-sm">{{ specialSettingsMessage }}</p>
+
+              <button @click="salvarConfiguracoesEspeciais" class="w-full py-3 rounded-2xl bg-yellow-500 text-black font-black hover:bg-yellow-400 transition">Salvar resultado final</button>
+            </div>
+          </section>
+        </div>
+      </main>
+
+      <!-- Meus palpites -->
+      <main v-else-if="view === 'palpites'" class="max-w-7xl mx-auto px-4 md:px-6 pt-6">
+        <section class="glass rounded-[28px] p-5 md:p-6 card-glow mb-6">
+          <div class="mb-4">
+            <h3 class="text-xl text-yellow-300">Palpite especial</h3>
+            <p class="text-sm subtle-text">Escolha o campeão da Copa e o artilheiro do torneio. Vale pontos bônus no final!</p>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label class="text-[11px] uppercase tracking-[0.2em] text-gray-400 mb-2 block">Campeão</label>
+              <select v-model="user.championPick" @change="salvarPalpiteEspecial" class="w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 text-white font-bold outline-none focus:border-yellow-400/70">
+                <option :value="null">Selecione...</option>
+                <option v-for="team in ALL_TEAMS" :key="team" :value="team">{{ team }}</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-[11px] uppercase tracking-[0.2em] text-gray-400 mb-2 block">Artilheiro</label>
+              <input v-model="user.topScorerPick" @change="salvarPalpiteEspecial" type="text" placeholder="Nome do jogador" class="w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 text-white font-bold outline-none focus:border-yellow-400/70" />
+            </div>
+          </div>
+        </section>
+
+        <section class="glass rounded-[28px] p-5 md:p-6 card-glow">
+          <div class="flex items-center justify-between gap-3 mb-5 flex-wrap">
+            <div>
+              <h3 class="text-xl text-yellow-300">Meus palpites</h3>
+              <p class="text-sm subtle-text">Preencha o placar que você acha que vai acontecer. Jogos encerrados não podem mais ser alterados.</p>
+            </div>
+            <span class="chip px-3 py-1 text-xs font-bold">{{ matches.length }} jogos liberados</span>
+          </div>
+
+          <div v-if="matches.length === 0" class="rounded-[24px] bg-black/35 border border-dashed border-white/12 p-8 text-center subtle-text">
+            Nenhum jogo foi liberado pelo admin ainda.
+          </div>
+
+          <div v-else class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+            <div v-for="m in matches" :key="m.id" class="rounded-2xl border border-white/6 bg-white/5 px-4 py-4">
+              <div class="flex items-center justify-between gap-2 mb-3">
+                <p class="text-[11px] uppercase tracking-[0.2em] text-gray-400">{{ m.group }}</p>
+                <span class="chip px-2 py-1 text-[10px] font-bold" :class="m.isFinished ? 'status-live' : 'status-open'">
+                  {{ m.isFinished ? 'Encerrado' : 'Aberto' }}
+                </span>
+              </div>
+              <div class="grid grid-cols-[1fr_auto_1fr] gap-2 items-center">
+                <div class="text-center">
+                  <p class="font-bold text-sm truncate mb-2">{{ m.teamA }}</p>
+                  <input type="number" min="0" v-model.number="getMyPrediction(m.id).scoreA" :disabled="m.isFinished" @change="salvarMeuPalpite(m.id)" class="score-input mx-auto" />
+                </div>
+                <div class="text-yellow-400 font-black">X</div>
+                <div class="text-center">
+                  <p class="font-bold text-sm truncate mb-2">{{ m.teamB }}</p>
+                  <input type="number" min="0" v-model.number="getMyPrediction(m.id).scoreB" :disabled="m.isFinished" @change="salvarMeuPalpite(m.id)" class="score-input mx-auto" />
+                </div>
+              </div>
+              <p v-if="m.isFinished" class="text-xs subtle-text mt-3 text-center">Placar real: {{ exibirPlacar(m.realScoreA) }} x {{ exibirPlacar(m.realScoreB) }}</p>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <!-- Perfil -->
+      <main v-else-if="view === 'perfil'" class="max-w-7xl mx-auto px-4 md:px-6 pt-6">
+        <section class="glass rounded-[28px] p-5 md:p-6 card-glow max-w-2xl mx-auto">
+          <div class="mb-5">
+            <h3 class="text-xl text-yellow-300">Meu perfil</h3>
+            <p class="text-sm subtle-text">Atualize seus dados pessoais e, se quiser, troque sua senha.</p>
+          </div>
+
+          <form @submit.prevent="salvarPerfil" class="space-y-4">
+            <div class="flex items-center gap-4">
+              <img v-if="profileForm.photo" :src="profileForm.photo" class="w-16 h-16 rounded-2xl object-cover border border-white/10" />
+              <div v-else class="w-16 h-16 rounded-2xl bg-yellow-500 text-black font-black flex items-center justify-center text-2xl">{{ user.displayName.charAt(0).toUpperCase() }}</div>
+              <div class="flex items-center gap-2">
+                <label class="cursor-pointer px-4 py-3 rounded-2xl border border-white/10 text-white font-bold text-sm hover:bg-white/5 transition">
+                  📷 Trocar foto
+                  <input type="file" accept="image/*" @change="onProfilePhotoSelected" class="hidden" />
+                </label>
+                <button v-if="profileForm.photo" type="button" @click="profileForm.photo = null" class="text-xs text-red-400 hover:underline">Remover</button>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <input v-model="profileForm.firstName" type="text" placeholder="Nome" class="w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 text-white font-bold outline-none focus:border-yellow-400/70" />
+              <input v-model="profileForm.lastName" type="text" placeholder="Sobrenome" class="w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 text-white font-bold outline-none focus:border-yellow-400/70" />
+            </div>
+
+            <div class="rounded-2xl border border-white/6 bg-white/5 p-4 space-y-3">
+              <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Trocar senha (opcional)</p>
+              <input v-model="profileForm.currentPassword" type="password" placeholder="Senha atual" class="w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 text-white font-bold outline-none focus:border-yellow-400/70" />
+              <div class="grid grid-cols-2 gap-3">
+                <input v-model="profileForm.newPassword" type="password" placeholder="Nova senha" class="w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 text-white font-bold outline-none focus:border-yellow-400/70" />
+                <input v-model="profileForm.confirmNewPassword" type="password" placeholder="Confirmar nova senha" class="w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 text-white font-bold outline-none focus:border-yellow-400/70" />
+              </div>
+            </div>
+
+            <p v-if="profileError" class="text-red-400 text-sm">{{ profileError }}</p>
+            <p v-if="profileMessage" class="text-green-400 text-sm">{{ profileMessage }}</p>
+
+            <button type="submit" :disabled="profileSaving" class="w-full py-3 rounded-2xl bg-yellow-500 text-black font-black hover:bg-yellow-400 transition disabled:opacity-60">
+              {{ profileSaving ? 'Salvando...' : 'Salvar alterações' }}
+            </button>
+          </form>
+        </section>
+      </main>
+
+      <!-- Modo transmissão -->
+      <main v-else class="max-w-7xl mx-auto px-4 md:px-6 pt-6 space-y-6">
+        <section class="grid grid-cols-1 xl:grid-cols-[1.2fr_.8fr] gap-6">
+
+          <div class="glass rounded-[28px] p-5 md:p-6 card-glow">
+            <div class="flex items-center justify-between gap-3 flex-wrap mb-4">
+              <div>
+                <h3 class="text-xl text-yellow-300">Transmissão da rodada</h3>
+                <p class="text-sm subtle-text">{{ user.isAdmin ? 'Escolha a partida para mostrar os palpites na tela.' : 'Partida em exibição no momento.' }}</p>
+              </div>
+              <span class="chip px-3 py-1 text-xs font-bold">Auto save ativo</span>
+            </div>
+
+            <select v-model.number="selectedMatchId" @change="saveAdminState" :disabled="!user.isAdmin" class="w-full rounded-2xl bg-black/40 border border-yellow-400/25 px-4 py-4 text-white text-lg font-black outline-none focus:border-yellow-400/70 mb-5 disabled:opacity-70">
+              <option v-if="matches.length === 0" :value="null">Nenhum jogo selecionado</option>
+              <option v-for="m in matches" :key="m.id" :value="m.id">{{ m.group }} | {{ m.teamA }} x {{ m.teamB }}</option>
+            </select>
+
+            <div v-if="activeMatch" class="rounded-[24px] bg-black/35 border border-white/8 p-4 md:p-5">
+              <div class="flex items-center justify-between gap-3 flex-wrap mb-5">
+                <div>
+                  <p class="text-xs uppercase tracking-[0.25em] text-yellow-300">Jogo em exibição</p>
+                  <h4 class="text-2xl md:text-3xl">{{ activeMatch.teamA }} <span class="text-yellow-400">x</span> {{ activeMatch.teamB }}</h4>
+                  <p class="subtle-text text-sm mt-1">{{ activeMatch.group }}</p>
+                </div>
+                <span class="chip px-4 py-2 text-sm font-bold" :class="activeMatch.isFinished ? 'status-live' : 'status-open'">
+                  {{ activeMatch.isFinished ? 'Finalizado' : 'Em andamento' }}
+                </span>
+              </div>
+
+              <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+                <div v-for="pred in activeMatchPredictions" :key="pred.participant" class="rounded-[22px] p-4 border border-white/8 bg-gradient-to-b from-white/[0.08] to-white/[0.03] shadow-xl">
+                  <div class="flex items-start justify-between gap-3 mb-3">
+                    <div class="min-w-0">
+                      <p class="text-yellow-300 font-black truncate text-sm md:text-base">{{ pred.participant }}</p>
+                      <p class="text-[11px] subtle-text">Palpite enviado</p>
+                    </div>
+                    <span class="chip px-2 py-1 text-[10px] font-bold">⚽</span>
+                  </div>
+                  <div class="flex justify-between text-[10px] subtle-text mb-2 gap-2">
+                    <span class="truncate">{{ activeMatch.teamA }}</span>
+                    <span class="truncate text-right">{{ activeMatch.teamB }}</span>
+                  </div>
+                  <div class="flex justify-center items-center gap-2">
+                    <div class="score-box !min-w-[64px] !min-h-[56px] !text-2xl">{{ exibirPlacar(pred.scoreA) }}</div>
+                    <span class="text-yellow-400 font-black">X</span>
+                    <div class="score-box !min-w-[64px] !min-h-[56px] !text-2xl">{{ exibirPlacar(pred.scoreB) }}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div v-else class="rounded-[24px] bg-black/35 border border-dashed border-white/12 p-8 text-center subtle-text">
+              Aguardando o admin liberar um jogo.
+            </div>
+          </div>
+
+          <div class="space-y-6">
+            <section class="glass rounded-[28px] p-5 md:p-6 card-glow">
+              <div class="flex items-center justify-between gap-3 mb-4">
+                <div>
+                  <h3 class="text-xl text-yellow-300">Pódio</h3>
+                  <p class="text-sm subtle-text">Os 3 melhores do momento.</p>
+                </div>
+                <span class="chip px-3 py-1 text-xs font-bold">Top 3</span>
+              </div>
+              <div class="grid grid-cols-1 gap-3">
+                <div v-for="(item, idx) in podium" :key="item.name" class="rounded-2xl p-4 border border-white/8" :class="idx === 0 ? 'podium-gold' : idx === 1 ? 'podium-silver' : 'podium-bronze'">
+                  <div class="flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-3 min-w-0">
+                      <div class="w-11 h-11 rounded-2xl bg-black/30 flex items-center justify-center font-black text-lg">{{ idx + 1 }}º</div>
+                      <div class="min-w-0">
+                        <p class="font-black truncate">{{ item.name }}</p>
+                        <p class="text-xs subtle-text">Pontuação atual</p>
+                      </div>
+                    </div>
+                    <div class="text-xl font-black text-yellow-300">{{ item.points }} pts</div>
+                  </div>
+                </div>
+                <div v-if="podium.length === 0" class="text-sm subtle-text">Sem dados ainda.</div>
+              </div>
+            </section>
+
+            <section class="glass rounded-[28px] p-5 md:p-6 card-glow">
+              <div class="flex items-center justify-between gap-3 mb-4">
+                <div>
+                  <h3 class="text-xl text-yellow-300">Ranking geral</h3>
+                  <p class="text-sm subtle-text">Classificação completa do bolão.</p>
+                </div>
+                <span class="chip px-3 py-1 text-xs font-bold">{{ ranking.length }} nomes</span>
+              </div>
+              <div>
+                <div v-for="(rank, index) in ranking" :key="rank.name" class="rank-row" :class="index < 3 ? 'bg-white/[0.03]' : ''">
+                  <div class="w-11 h-11 rounded-2xl bg-black/35 border border-white/8 flex items-center justify-center font-black text-lg">{{ index + 1 }}º</div>
+                  <div class="min-w-0">
+                    <p class="font-black truncate">{{ rank.name }}</p>
+                    <p class="text-xs subtle-text">Participante</p>
+                  </div>
+                  <div class="text-right font-black text-lg" :class="index === 0 ? 'text-yellow-300' : 'text-green-400'">{{ rank.points }} pts</div>
+                </div>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <section class="glass rounded-[28px] p-5 md:p-6 card-glow">
+          <div class="flex items-center justify-between gap-3 mb-4 flex-wrap">
+            <div>
+              <h3 class="text-xl text-yellow-300">Evolução do ranking</h3>
+              <p class="text-sm subtle-text">Pontuação acumulada de cada participante ao longo dos jogos encerrados.</p>
+            </div>
+          </div>
+          <div v-if="rankingHistory.length > 1" class="overflow-x-auto">
+            <svg viewBox="0 0 600 220" class="w-full" style="min-width: 480px">
+              <polyline v-for="series in rankingChartSeries" :key="series.name" :points="chartPoints(series.values)" fill="none" :stroke="series.color" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" />
+            </svg>
+            <div class="flex flex-wrap gap-3 mt-4">
+              <div v-for="series in rankingChartSeries" :key="series.name" class="flex items-center gap-2 text-xs">
+                <span class="w-3 h-3 rounded-full inline-block" :style="{ background: series.color }"></span>
+                <span class="font-bold">{{ series.name }}</span>
+                <span class="subtle-text">{{ series.values[series.values.length - 1] }} pts</span>
+              </div>
+            </div>
+          </div>
+          <div v-else class="rounded-[24px] bg-black/35 border border-dashed border-white/12 p-8 text-center subtle-text">
+            Ainda não há jogos encerrados para mostrar a evolução.
+          </div>
+        </section>
+      </main>
+    </template>
   </div>
 
   <script type="module" src="js/app.js"></script>
