@@ -179,6 +179,12 @@ function normalizePhone(value) {
   return String(value ?? "").replace(/\D/g, "");
 }
 
+function matchHasStarted(match) {
+  if (!match.matchDate || !match.matchTime) return false;
+  const start = new Date(`${match.matchDate}T${match.matchTime}:00-03:00`);
+  return Date.now() >= start.getTime();
+}
+
 function n8nMiddleware(req, res, next) {
   const key = req.headers["x-api-key"];
   if (!process.env.N8N_API_KEY || key !== process.env.N8N_API_KEY) {
@@ -652,6 +658,9 @@ app.get("/api/n8n/current-match", n8nMiddleware, async (req, res) => {
       teamA: match.teamA,
       teamB: match.teamB,
       isFinished: Boolean(match.isFinished),
+      matchDate: match.matchDate ?? null,
+      matchTime: match.matchTime ?? null,
+      hasStarted: matchHasStarted(match),
     });
   } catch (e) {
     console.error("GET /api/n8n/current-match", e);
@@ -688,6 +697,9 @@ app.post("/api/n8n/predictions", n8nMiddleware, async (req, res) => {
     }
     if (match.isFinished) {
       return res.status(409).json({ erro: "Esse jogo já foi encerrado." });
+    }
+    if (matchHasStarted(match)) {
+      return res.status(409).json({ erro: "Esse jogo já começou. Não é mais possível enviar palpites." });
     }
 
     const placarA = Number(scoreA);
