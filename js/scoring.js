@@ -5,7 +5,7 @@ function normalizeText(value) {
 export function calculateRanking(participants, matches, predictions, settings = {}) {
   const scores = {};
   participants.forEach(p => {
-    scores[p.name] = { name: p.name, points: 0 };
+    scores[p.name] = { name: p.name, photo: p.photo ?? null, points: 0 };
   });
 
   matches

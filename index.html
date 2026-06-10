@@ -32,7 +32,10 @@
 
           <form v-if="authMode === 'login'" @submit.prevent="fazerLogin" class="space-y-3">
             <input v-model="loginForm.displayName" type="text" placeholder="Nome de exibição" class="w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 text-white font-bold outline-none focus:border-yellow-400/70" />
-            <input v-model="loginForm.password" type="password" placeholder="Senha" class="w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 text-white font-bold outline-none focus:border-yellow-400/70" />
+            <div class="relative">
+              <input v-model="loginForm.password" :type="showPassword.login ? 'text' : 'password'" placeholder="Senha" class="w-full rounded-2xl bg-black/40 border border-white/10 pl-4 pr-12 py-3 text-white font-bold outline-none focus:border-yellow-400/70" />
+              <button type="button" @click="showPassword.login = !showPassword.login" class="absolute right-3 top-1/2 -translate-y-1/2 text-lg text-white/50 hover:text-white/90 transition">{{ showPassword.login ? '🙈' : '👁️' }}</button>
+            </div>
             <button type="submit" :disabled="authLoading" class="w-full py-3 rounded-2xl bg-yellow-500 text-black font-black hover:bg-yellow-400 transition disabled:opacity-60">
               {{ authLoading ? 'Entrando...' : 'Entrar' }}
             </button>
@@ -44,7 +47,10 @@
               <input v-model="registerForm.lastName" type="text" placeholder="Sobrenome" class="w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 text-white font-bold outline-none focus:border-yellow-400/70" />
             </div>
             <input v-model="registerForm.displayName" type="text" placeholder="Nome de exibição (apelido)" class="w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 text-white font-bold outline-none focus:border-yellow-400/70" />
-            <input v-model="registerForm.password" type="password" placeholder="Senha" class="w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 text-white font-bold outline-none focus:border-yellow-400/70" />
+            <div class="relative">
+              <input v-model="registerForm.password" :type="showPassword.register ? 'text' : 'password'" placeholder="Senha" class="w-full rounded-2xl bg-black/40 border border-white/10 pl-4 pr-12 py-3 text-white font-bold outline-none focus:border-yellow-400/70" />
+              <button type="button" @click="showPassword.register = !showPassword.register" class="absolute right-3 top-1/2 -translate-y-1/2 text-lg text-white/50 hover:text-white/90 transition">{{ showPassword.register ? '🙈' : '👁️' }}</button>
+            </div>
 
             <div class="flex items-center gap-3">
               <label class="shrink-0 cursor-pointer px-4 py-3 rounded-2xl border border-white/10 text-white font-bold text-sm hover:bg-white/5 transition">
@@ -409,10 +415,19 @@
 
             <div class="rounded-2xl border border-white/6 bg-white/5 p-4 space-y-3">
               <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Trocar senha (opcional)</p>
-              <input v-model="profileForm.currentPassword" type="password" placeholder="Senha atual" class="w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 text-white font-bold outline-none focus:border-yellow-400/70" />
+              <div class="relative">
+                <input v-model="profileForm.currentPassword" :type="showPassword.current ? 'text' : 'password'" placeholder="Senha atual" class="w-full rounded-2xl bg-black/40 border border-white/10 pl-4 pr-12 py-3 text-white font-bold outline-none focus:border-yellow-400/70" />
+                <button type="button" @click="showPassword.current = !showPassword.current" class="absolute right-3 top-1/2 -translate-y-1/2 text-lg text-white/50 hover:text-white/90 transition">{{ showPassword.current ? '🙈' : '👁️' }}</button>
+              </div>
               <div class="grid grid-cols-2 gap-3">
-                <input v-model="profileForm.newPassword" type="password" placeholder="Nova senha" class="w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 text-white font-bold outline-none focus:border-yellow-400/70" />
-                <input v-model="profileForm.confirmNewPassword" type="password" placeholder="Confirmar nova senha" class="w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 text-white font-bold outline-none focus:border-yellow-400/70" />
+                <div class="relative">
+                  <input v-model="profileForm.newPassword" :type="showPassword.new ? 'text' : 'password'" placeholder="Nova senha" class="w-full rounded-2xl bg-black/40 border border-white/10 pl-4 pr-12 py-3 text-white font-bold outline-none focus:border-yellow-400/70" />
+                  <button type="button" @click="showPassword.new = !showPassword.new" class="absolute right-3 top-1/2 -translate-y-1/2 text-lg text-white/50 hover:text-white/90 transition">{{ showPassword.new ? '🙈' : '👁️' }}</button>
+                </div>
+                <div class="relative">
+                  <input v-model="profileForm.confirmNewPassword" :type="showPassword.confirm ? 'text' : 'password'" placeholder="Confirmar nova senha" class="w-full rounded-2xl bg-black/40 border border-white/10 pl-4 pr-12 py-3 text-white font-bold outline-none focus:border-yellow-400/70" />
+                  <button type="button" @click="showPassword.confirm = !showPassword.confirm" class="absolute right-3 top-1/2 -translate-y-1/2 text-lg text-white/50 hover:text-white/90 transition">{{ showPassword.confirm ? '🙈' : '👁️' }}</button>
+                </div>
               </div>
             </div>
 
@@ -497,6 +512,8 @@
                   <div class="flex items-center justify-between gap-3">
                     <div class="flex items-center gap-3 min-w-0">
                       <div class="w-11 h-11 rounded-2xl bg-black/30 flex items-center justify-center font-black text-lg">{{ idx + 1 }}º</div>
+                      <img v-if="item.photo" :src="item.photo" class="rank-avatar" />
+                      <div v-else class="rank-avatar-placeholder">{{ item.name.charAt(0).toUpperCase() }}</div>
                       <div class="min-w-0">
                         <p class="font-black truncate">{{ item.name }}</p>
                         <p class="text-xs subtle-text">Pontuação atual</p>
@@ -520,6 +537,8 @@
               <div>
                 <div v-for="(rank, index) in ranking" :key="rank.name" class="rank-row" :class="index < 3 ? 'bg-white/[0.03]' : ''">
                   <div class="w-11 h-11 rounded-2xl bg-black/35 border border-white/8 flex items-center justify-center font-black text-lg">{{ index + 1 }}º</div>
+                  <img v-if="rank.photo" :src="rank.photo" class="rank-avatar" />
+                  <div v-else class="rank-avatar-placeholder">{{ rank.name.charAt(0).toUpperCase() }}</div>
                   <div class="min-w-0">
                     <p class="font-black truncate">{{ rank.name }}</p>
                     <p class="text-xs subtle-text">Participante</p>

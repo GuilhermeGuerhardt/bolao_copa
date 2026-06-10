@@ -119,6 +119,10 @@ function signToken(user) {
   );
 }
 
+function normalizeDisplayNameInput(value) {
+  return String(value ?? "").trim().replace(/\s+/g, " ");
+}
+
 function authMiddleware(req, res, next) {
   const header = req.headers.authorization || "";
   const token = header.startsWith("Bearer ") ? header.slice(7) : null;
@@ -167,7 +171,7 @@ app.post("/api/auth/register", async (req, res) => {
   try {
     const { displayName, password, firstName, lastName, photo } = req.body || {};
 
-    const nome = String(displayName ?? "").trim();
+    const nome = normalizeDisplayNameInput(displayName);
     const sobrenome = String(lastName ?? "").trim();
     const primeiroNome = String(firstName ?? "").trim();
 
@@ -181,7 +185,7 @@ app.post("/api/auth/register", async (req, res) => {
       return res.status(400).json({ erro: "Foto muito grande." });
     }
 
-    const existing = await queryOne(`SELECT id FROM bolao_users WHERE "displayName" = $1`, [nome]);
+    const existing = await queryOne(`SELECT id FROM bolao_users WHERE LOWER("displayName") = LOWER($1)`, [nome]);
     if (existing) {
       return res.status(409).json({ erro: "Esse nome de exibição já está em uso." });
     }
@@ -205,12 +209,12 @@ app.post("/api/auth/register", async (req, res) => {
 app.post("/api/auth/login", async (req, res) => {
   try {
     const { displayName, password } = req.body || {};
-    const nome = String(displayName ?? "").trim();
+    const nome = normalizeDisplayNameInput(displayName);
     if (!nome || !password) {
       return res.status(400).json({ erro: "Informe o nome de exibição e a senha." });
     }
 
-    const user = await queryOne(`SELECT * FROM bolao_users WHERE "displayName" = $1`, [nome]);
+    const user = await queryOne(`SELECT * FROM bolao_users WHERE LOWER("displayName") = LOWER($1)`, [nome]);
     if (!user) return res.status(401).json({ erro: "Nome de exibição ou senha inválidos." });
 
     const ok = await bcrypt.compare(String(password), user.passwordHash);
@@ -241,7 +245,7 @@ app.get("/api/state", authMiddleware, async (req, res) => {
   try {
     const [users, matches, predictions, settings] = await Promise.all([
       query(
-        `SELECT "displayName" AS name, "championPick", "topScorerPick"
+        `SELECT "displayName" AS name, photo, "championPick", "topScorerPick"
          FROM bolao_users WHERE "isAdmin" = FALSE ORDER BY "displayName"`
       ),
       query(`SELECT * FROM bolao_matches ORDER BY id`),
@@ -254,6 +258,7 @@ app.get("/api/state", authMiddleware, async (req, res) => {
     res.json({
       participants: users.map((u) => ({
         name: u.name,
+        photo: u.photo ?? null,
         championPick: u.championPick ?? null,
         topScorerPick: u.topScorerPick ?? null,
       })),

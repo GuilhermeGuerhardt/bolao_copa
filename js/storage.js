@@ -47,6 +47,7 @@ export function normalizeState(raw) {
     ? raw.participants
         .map(p => ({
           name: String(p?.name ?? '').trim(),
+          photo: p?.photo ?? null,
           championPick: p?.championPick ?? null,
           topScorerPick: p?.topScorerPick ?? null
         }))

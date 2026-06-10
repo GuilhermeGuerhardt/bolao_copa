@@ -18,6 +18,7 @@ createApp({
       view: 'transmissao',
       authMode: 'login',
       authError: '',
+      showPassword: { login: false, register: false, current: false, new: false, confirm: false },
       authLoading: false,
       loginForm: { displayName: '', password: '' },
       registerForm: { firstName: '', lastName: '', displayName: '', password: '', photo: null },
