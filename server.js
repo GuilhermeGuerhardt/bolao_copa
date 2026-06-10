@@ -84,6 +84,7 @@ async function initDb() {
     ALTER TABLE bolao_users ADD COLUMN IF NOT EXISTS "championPick" TEXT;
     ALTER TABLE bolao_users ADD COLUMN IF NOT EXISTS "topScorerPick" TEXT;
     ALTER TABLE bolao_matches ADD COLUMN IF NOT EXISTS "finishedAt" TIMESTAMPTZ;
+    ALTER TABLE bolao_matches ADD COLUMN IF NOT EXISTS "matchDate" TEXT;
 
     INSERT INTO bolao_settings (key, value) VALUES ('actualChampion', NULL) ON CONFLICT (key) DO NOTHING;
     INSERT INTO bolao_settings (key, value) VALUES ('actualTopScorer', NULL) ON CONFLICT (key) DO NOTHING;
@@ -306,17 +307,18 @@ app.put("/api/state", authMiddleware, adminMiddleware, async (req, res) => {
           }
 
           await client.query(
-            `INSERT INTO bolao_matches (id, "group", "teamA", "teamB", "realScoreA", "realScoreB", "isFinished", "finishedAt", "addedAt")
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            `INSERT INTO bolao_matches (id, "group", "teamA", "teamB", "realScoreA", "realScoreB", "isFinished", "finishedAt", "matchDate", "addedAt")
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
              ON CONFLICT (id) DO UPDATE SET
                "realScoreA" = EXCLUDED."realScoreA",
                "realScoreB" = EXCLUDED."realScoreB",
                "isFinished" = EXCLUDED."isFinished",
-               "finishedAt" = EXCLUDED."finishedAt"`,
+               "finishedAt" = EXCLUDED."finishedAt",
+               "matchDate" = EXCLUDED."matchDate"`,
             [
               m.id, m.group, m.teamA, m.teamB,
               m.realScoreA ?? null, m.realScoreB ?? null,
-              isFinished, finishedAt,
+              isFinished, finishedAt, m.matchDate ?? null,
               new Date().toISOString(),
             ]
           );
@@ -750,6 +752,7 @@ function normalizeMatch(m) {
     realScoreB: m.realScoreB ?? null,
     isFinished: Boolean(m.isFinished),
     finishedAt: m.finishedAt ?? null,
+    matchDate: m.matchDate ?? null,
   };
 }
 

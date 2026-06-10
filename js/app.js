@@ -216,6 +216,12 @@ createApp({
       return value === null || value === '' || Number.isNaN(Number(value)) ? '-' : value;
     },
 
+    formatarData(value) {
+      if (!value) return '';
+      const [ano, mes, dia] = value.split('-');
+      return `${dia}/${mes}/${ano}`;
+    },
+
     async limparSomentePlacar() {
       try {
         await fetch(`${API}/state/limpar`, { method: 'POST', headers: this.authHeaders() });
