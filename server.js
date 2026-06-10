@@ -668,6 +668,35 @@ app.get("/api/n8n/current-match", n8nMiddleware, async (req, res) => {
   }
 });
 
+app.get("/api/n8n/participants", n8nMiddleware, async (req, res) => {
+  try {
+    const participants = await query(
+      `SELECT name, whatsapp FROM bolao_participants WHERE whatsapp IS NOT NULL AND whatsapp != '' ORDER BY name`
+    );
+
+    const matchId = req.query.matchId ? Number(req.query.matchId) : null;
+    let predicted = new Set();
+    if (matchId) {
+      const predictions = await query(
+        `SELECT participant FROM bolao_predictions WHERE "matchId" = $1`,
+        [matchId]
+      );
+      predicted = new Set(predictions.map(p => p.participant));
+    }
+
+    res.json({
+      participants: participants.map(p => ({
+        name: p.name,
+        whatsapp: p.whatsapp,
+        ...(matchId ? { hasPrediction: predicted.has(p.name) } : {}),
+      })),
+    });
+  } catch (e) {
+    console.error("GET /api/n8n/participants", e);
+    res.status(500).json({ erro: "Erro ao carregar participantes." });
+  }
+});
+
 app.post("/api/n8n/predictions", n8nMiddleware, async (req, res) => {
   try {
     const { whatsapp, scoreA, scoreB, matchId } = req.body || {};
