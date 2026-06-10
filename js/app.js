@@ -2,7 +2,7 @@ import { createApp } from 'vue';
 import { normalizeState } from './storage.js';
 import { calculateRanking, calculateRankingHistory } from './scoring.js';
 import { exportarBackup as downloadBackup, resizeImageToBase64 } from './utils.js';
-import { buildAllMatches, ALL_TEAMS } from './config.js';
+import { buildAllMatches, ALL_TEAMS, MATCH_DATES } from './config.js';
 
 const CHART_COLORS = ['#facc15', '#38bdf8', '#34d399', '#f472b6', '#a78bfa', '#fb923c', '#22d3ee', '#f87171', '#4ade80', '#c084fc'];
 
@@ -32,6 +32,7 @@ createApp({
       pollTimer: null,
 
       ALL_TEAMS,
+      MATCH_DATES,
 
       profileForm: { firstName: '', lastName: '', photo: null, currentPassword: '', newPassword: '', confirmNewPassword: '' },
       profileError: '',
@@ -220,6 +221,23 @@ createApp({
       if (!value) return '';
       const [ano, mes, dia] = value.split('-');
       return `${dia}/${mes}/${ano}`;
+    },
+
+    formatarDataHora(match) {
+      const partes = [];
+      if (match.matchDate) partes.push(this.formatarData(match.matchDate));
+      if (match.matchTime) partes.push(match.matchTime);
+      return partes.join(' · ');
+    },
+
+    atualizarPlacarReal(match, field, value) {
+      if (value === '') {
+        match[field] = null;
+        return;
+      }
+      let num = Math.trunc(Number(value));
+      if (Number.isNaN(num)) return;
+      match[field] = Math.min(20, Math.max(0, num));
     },
 
     async limparSomentePlacar() {

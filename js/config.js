@@ -38,3 +38,17 @@ export function buildAllMatches() {
 
   return allMatches;
 }
+
+const WEEKDAYS_PT = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+
+export function buildMatchDates() {
+  const dates = [];
+  for (let day = 11; day <= 27; day++) {
+    const date = new Date(2026, 5, day);
+    const dia = String(day).padStart(2, '0');
+    dates.push({ value: `2026-06-${dia}`, label: `${dia}/06 - ${WEEKDAYS_PT[date.getDay()]}` });
+  }
+  return dates;
+}
+
+export const MATCH_DATES = buildMatchDates();

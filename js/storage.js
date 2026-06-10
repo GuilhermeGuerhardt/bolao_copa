@@ -22,7 +22,8 @@ export function normalizeState(raw) {
           realScoreB: toNullableNumber(match.realScoreB),
           isFinished: Boolean(match.isFinished),
           finishedAt: match.finishedAt ?? null,
-          matchDate: match.matchDate ?? null
+          matchDate: match.matchDate ?? null,
+          matchTime: match.matchTime ?? null
         };
       })
     : [];
