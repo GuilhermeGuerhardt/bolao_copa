@@ -124,22 +124,22 @@
             <div class="glass rounded-[28px] p-5 md:p-6 border border-yellow-400/15">
               <p class="text-xs font-bold text-yellow-300 tracking-[0.25em] mb-3">Partida em destaque</p>
               <div v-if="activeMatch">
-                <div class="flex items-center justify-between gap-3 text-center">
-                  <div class="flex-1">
-                    <div class="team-pill rounded-2xl px-3 py-4">
+                <div class="flex items-center justify-between gap-2 md:gap-3 text-center">
+                  <div class="flex-1 min-w-0">
+                    <div class="team-pill rounded-2xl px-2 md:px-3 py-3 md:py-4">
                       <p class="text-[11px] uppercase text-green-300 mb-1">Casa</p>
-                      <p class="font-black text-lg md:text-xl">{{ activeMatch.teamA }}</p>
+                      <p class="font-black text-sm md:text-xl break-words">{{ activeMatch.teamA }}</p>
                     </div>
                   </div>
-                  <div class="shrink-0 flex items-center gap-2 px-2">
+                  <div class="shrink-0 flex items-center gap-1 md:gap-2 px-1 md:px-2">
                     <div class="score-box">{{ exibirPlacar(activeMatch.realScoreA) }}</div>
                     <span class="text-yellow-400 font-black text-xl">X</span>
                     <div class="score-box">{{ exibirPlacar(activeMatch.realScoreB) }}</div>
                   </div>
-                  <div class="flex-1">
-                    <div class="team-pill rounded-2xl px-3 py-4">
+                  <div class="flex-1 min-w-0">
+                    <div class="team-pill rounded-2xl px-2 md:px-3 py-3 md:py-4">
                       <p class="text-[11px] uppercase text-sky-300 mb-1">Visitante</p>
-                      <p class="font-black text-lg md:text-xl">{{ activeMatch.teamB }}</p>
+                      <p class="font-black text-sm md:text-xl break-words">{{ activeMatch.teamB }}</p>
                     </div>
                   </div>
                 </div>
