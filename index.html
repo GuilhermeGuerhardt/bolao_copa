@@ -436,7 +436,16 @@
                     <span class="truncate">{{ activeMatch.teamA }}</span>
                     <span class="truncate text-right">{{ activeMatch.teamB }}</span>
                   </div>
-                  <div class="flex justify-center items-center gap-2">
+                  <div v-if="user && user.isAdmin" class="flex justify-center items-center gap-2">
+                    <input type="number" min="0" max="99" :value="pred.scoreA"
+                      @change="salvarPalpiteAdmin(pred, 'scoreA', $event.target.value)"
+                      class="score-box !min-w-[64px] !min-h-[56px] !text-2xl text-center bg-black/40 border border-yellow-400/25 rounded-2xl outline-none focus:border-yellow-400/70 text-white">
+                    <span class="text-yellow-400 font-black">X</span>
+                    <input type="number" min="0" max="99" :value="pred.scoreB"
+                      @change="salvarPalpiteAdmin(pred, 'scoreB', $event.target.value)"
+                      class="score-box !min-w-[64px] !min-h-[56px] !text-2xl text-center bg-black/40 border border-yellow-400/25 rounded-2xl outline-none focus:border-yellow-400/70 text-white">
+                  </div>
+                  <div v-else class="flex justify-center items-center gap-2">
                     <div class="score-box !min-w-[64px] !min-h-[56px] !text-2xl">{{ exibirPlacar(pred.scoreA) }}</div>
                     <span class="text-yellow-400 font-black">X</span>
                     <div class="score-box !min-w-[64px] !min-h-[56px] !text-2xl">{{ exibirPlacar(pred.scoreB) }}</div>

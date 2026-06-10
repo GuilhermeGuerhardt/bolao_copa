@@ -404,6 +404,32 @@ createApp({
       }
     },
 
+    async salvarPalpiteAdmin(pred, field, value) {
+      const matchId = this.selectedMatchId;
+      if (!matchId) return;
+
+      const scoreA = field === 'scoreA' ? value : pred.scoreA;
+      const scoreB = field === 'scoreB' ? value : pred.scoreB;
+
+      try {
+        const res = await fetch(`${API}/admin/predictions`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', ...this.authHeaders() },
+          body: JSON.stringify({ matchId, participant: pred.participant, scoreA, scoreB })
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        const idx = this.predictions.findIndex(p => p.matchId === matchId && p.participant === pred.participant);
+        if (idx >= 0) {
+          this.predictions[idx] = { ...this.predictions[idx], ...data.prediction };
+        } else {
+          this.predictions.push({ matchId, participant: pred.participant, ...data.prediction });
+        }
+      } catch {
+        // ignora falha pontual de rede
+      }
+    },
+
     async salvarConfiguracoesEspeciais() {
       this.specialSettingsMessage = '';
       try {

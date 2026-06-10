@@ -585,6 +585,52 @@ app.put("/api/settings/special", authMiddleware, adminMiddleware, async (req, re
   }
 });
 
+// ─── Palpites (somente admin) ───────────────────────────────────────────────────
+
+app.put("/api/admin/predictions", authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const { matchId, participant, scoreA, scoreB } = req.body || {};
+
+    const id = Number(matchId);
+    if (!Number.isInteger(id)) {
+      return res.status(400).json({ erro: "Jogo inválido." });
+    }
+
+    const match = await queryOne(`SELECT * FROM bolao_matches WHERE id = $1`, [id]);
+    if (!match) {
+      return res.status(404).json({ erro: "Jogo não encontrado." });
+    }
+
+    const nome = normalizeDisplayNameInput(participant);
+    const part = await queryOne(`SELECT * FROM bolao_participants WHERE name = $1`, [nome]);
+    if (!part) {
+      return res.status(404).json({ erro: "Participante não encontrado." });
+    }
+
+    const isValidScore = (v) => v === null || v === undefined || v === "" || (Number.isInteger(Number(v)) && Number(v) >= 0 && Number(v) <= 99);
+    if (!isValidScore(scoreA) || !isValidScore(scoreB)) {
+      return res.status(400).json({ erro: "Placar inválido. Use números inteiros entre 0 e 99." });
+    }
+
+    const placarA = scoreA === null || scoreA === undefined || scoreA === "" ? null : Number(scoreA);
+    const placarB = scoreB === null || scoreB === undefined || scoreB === "" ? null : Number(scoreB);
+
+    await query(
+      `INSERT INTO bolao_predictions ("matchId", participant, "scoreA", "scoreB")
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT ("matchId", participant) DO UPDATE SET
+         "scoreA" = EXCLUDED."scoreA",
+         "scoreB" = EXCLUDED."scoreB"`,
+      [match.id, part.name, placarA, placarB]
+    );
+
+    res.json({ ok: true, participant: part.name, matchId: match.id, prediction: { scoreA: placarA, scoreB: placarB } });
+  } catch (e) {
+    console.error("PUT /api/admin/predictions", e);
+    res.status(500).json({ erro: "Erro ao salvar palpite." });
+  }
+});
+
 // ─── Integração N8N ─────────────────────────────────────────────────────────────
 
 app.get("/api/n8n/current-match", n8nMiddleware, async (req, res) => {
