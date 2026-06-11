@@ -15,6 +15,57 @@ export const GROUPS = [
 
 export const ALL_TEAMS = GROUPS.flatMap(group => group.teams).sort((a, b) => a.localeCompare(b, 'pt-BR'));
 
+export const TEAM_FLAGS = {
+  'México': '🇲🇽',
+  'África do Sul': '🇿🇦',
+  'Coreia do Sul': '🇰🇷',
+  'Tchéquia': '🇨🇿',
+  'Canadá': '🇨🇦',
+  'Suíça': '🇨🇭',
+  'Catar': '🇶🇦',
+  'Bósnia': '🇧🇦',
+  'Brasil': '🇧🇷',
+  'Marrocos': '🇲🇦',
+  'Haiti': '🇭🇹',
+  'Escócia': '🏴󠁧󠁢󠁳󠁣󠁴󠁿',
+  'EUA': '🇺🇸',
+  'Paraguai': '🇵🇾',
+  'Austrália': '🇦🇺',
+  'Turquia': '🇹🇷',
+  'Alemanha': '🇩🇪',
+  'Curaçao': '🇨🇼',
+  'Costa do Marfim': '🇨🇮',
+  'Equador': '🇪🇨',
+  'Holanda': '🇳🇱',
+  'Japão': '🇯🇵',
+  'Tunísia': '🇹🇳',
+  'Suécia': '🇸🇪',
+  'Bélgica': '🇧🇪',
+  'Egito': '🇪🇬',
+  'Irã': '🇮🇷',
+  'Nova Zelândia': '🇳🇿',
+  'Espanha': '🇪🇸',
+  'Cabo Verde': '🇨🇻',
+  'Arábia Saudita': '🇸🇦',
+  'Uruguai': '🇺🇾',
+  'França': '🇫🇷',
+  'Senegal': '🇸🇳',
+  'Noruega': '🇳🇴',
+  'Iraque': '🇮🇶',
+  'Argentina': '🇦🇷',
+  'Argélia': '🇩🇿',
+  'Áustria': '🇦🇹',
+  'Jordânia': '🇯🇴',
+  'Portugal': '🇵🇹',
+  'Uzbequistão': '🇺🇿',
+  'Colômbia': '🇨🇴',
+  'Congo DR': '🇨🇩',
+  'Inglaterra': '🏴󠁧󠁢󠁥󠁮󠁧󠁿',
+  'Croácia': '🇭🇷',
+  'Gana': '🇬🇭',
+  'Panamá': '🇵🇦'
+};
+
 const GROUP_MATCH_PAIRS = [[0, 1], [2, 3], [0, 2], [1, 3], [0, 3], [1, 2]];
 
 export function buildAllMatches() {

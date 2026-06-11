@@ -2,7 +2,7 @@ import { createApp } from 'vue';
 import { normalizeState } from './storage.js';
 import { calculateRanking, calculateRankingHistory } from './scoring.js';
 import { exportarBackup as downloadBackup, resizeImageToBase64 } from './utils.js';
-import { buildAllMatches, ALL_TEAMS, MATCH_DATES } from './config.js';
+import { buildAllMatches, ALL_TEAMS, MATCH_DATES, TEAM_FLAGS } from './config.js';
 
 const CHART_COLORS = ['#facc15', '#38bdf8', '#34d399', '#f472b6', '#a78bfa', '#fb923c', '#22d3ee', '#f87171', '#4ade80', '#c084fc'];
 
@@ -30,6 +30,9 @@ createApp({
       settings: { actualChampion: null, actualTopScorer: null, championBonusPoints: 0, topScorerBonusPoints: 0 },
 
       pollTimer: null,
+      saveTimer: null,
+      saveQueue: Promise.resolve(),
+      savesInFlight: 0,
 
       ALL_TEAMS,
       MATCH_DATES,
@@ -71,6 +74,32 @@ createApp({
 
     totalFinishedMatches() {
       return this.matches.filter(m => m.isFinished).length;
+    },
+
+    rodadaDestaque() {
+      const match = this.activeMatch;
+      if (!match || !match.isFinished) return null;
+
+      const realA = Number(match.realScoreA);
+      const realB = Number(match.realScoreB);
+      if (match.realScoreA === null || match.realScoreB === null || Number.isNaN(realA) || Number.isNaN(realB)) return null;
+
+      const campeoes = [];
+      const bragres = [];
+
+      this.activeMatchPredictions.forEach(pred => {
+        const predA = Number(pred.scoreA);
+        const predB = Number(pred.scoreB);
+        if (pred.scoreA === null || pred.scoreB === null || Number.isNaN(predA) || Number.isNaN(predB)) return;
+
+        if (predA === realA && predB === realB) {
+          campeoes.push(pred.participant);
+        } else if (Math.sign(predA - predB) !== Math.sign(realA - realB)) {
+          bragres.push(pred.participant);
+        }
+      });
+
+      return { campeoes, bragres };
     },
 
     ranking() {
@@ -164,14 +193,19 @@ createApp({
 
         const raw = await res.json();
         const normalized = normalizeState(raw);
-        this.matches = normalized.matches;
         this.predictions = normalized.predictions;
-        this.selectedMatchId = normalized.selectedMatchId;
         this.participants = normalized.participants;
         this.settings = normalized.settings;
 
-        if (this.matches.length && (this.selectedMatchId === null || !this.matches.some(m => m.id === this.selectedMatchId))) {
-          this.selectedMatchId = this.matches[0].id;
+        // Enquanto houver edições do admin pendentes (debounce ou PUT em andamento),
+        // não sobrescreve matches/selectedMatchId com o estado (possivelmente desatualizado) do servidor.
+        if (this.saveTimer === null && this.savesInFlight === 0) {
+          this.matches = normalized.matches;
+          this.selectedMatchId = normalized.selectedMatchId;
+
+          if (this.matches.length && (this.selectedMatchId === null || !this.matches.some(m => m.id === this.selectedMatchId))) {
+            this.selectedMatchId = this.matches[0].id;
+          }
         }
       } catch {
         // mantém o estado atual em caso de falha de rede
@@ -185,16 +219,29 @@ createApp({
       }, 20000);
     },
 
-    async saveAdminState() {
-      try {
-        await fetch(`${API}/state`, {
+    saveAdminState() {
+      if (this.saveTimer) clearTimeout(this.saveTimer);
+      this.saveTimer = setTimeout(() => {
+        this.saveTimer = null;
+        this.flushAdminState();
+      }, 400);
+    },
+
+    flushAdminState() {
+      const payload = JSON.stringify({ selectedMatchId: this.selectedMatchId, matches: this.matches });
+      this.savesInFlight++;
+      this.saveQueue = this.saveQueue
+        .then(() => fetch(`${API}/state`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json', ...this.authHeaders() },
-          body: JSON.stringify({ selectedMatchId: this.selectedMatchId, matches: this.matches })
+          body: payload
+        }))
+        .catch(() => {
+          // ignora falha pontual de rede
+        })
+        .finally(() => {
+          this.savesInFlight--;
         });
-      } catch {
-        // ignora falha pontual de rede
-      }
     },
 
     selectMatch(match) {
@@ -215,6 +262,10 @@ createApp({
 
     exibirPlacar(value) {
       return value === null || value === '' || Number.isNaN(Number(value)) ? '-' : value;
+    },
+
+    bandeira(team) {
+      return TEAM_FLAGS[team] || '';
     },
 
     formatarData(value) {

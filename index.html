@@ -128,7 +128,7 @@
                   <div class="flex-1 min-w-0">
                     <div class="team-pill rounded-2xl px-2 md:px-3 py-3 md:py-4">
                       <p class="text-[11px] uppercase text-green-300 mb-1">Casa</p>
-                      <p class="font-black text-sm md:text-xl break-words">{{ activeMatch.teamA }}</p>
+                      <p class="font-black text-sm md:text-xl break-words">{{ bandeira(activeMatch.teamA) }} {{ activeMatch.teamA }}</p>
                     </div>
                   </div>
                   <div class="shrink-0 flex items-center gap-1 md:gap-2 px-1 md:px-2">
@@ -139,7 +139,7 @@
                   <div class="flex-1 min-w-0">
                     <div class="team-pill rounded-2xl px-2 md:px-3 py-3 md:py-4">
                       <p class="text-[11px] uppercase text-sky-300 mb-1">Visitante</p>
-                      <p class="font-black text-sm md:text-xl break-words">{{ activeMatch.teamB }}</p>
+                      <p class="font-black text-sm md:text-xl break-words">{{ bandeira(activeMatch.teamB) }} {{ activeMatch.teamB }}</p>
                     </div>
                   </div>
                 </div>
@@ -173,7 +173,7 @@
               <div v-for="m in allMatches" :key="m.id" class="rounded-2xl border border-white/6 bg-white/5 px-3 py-3 flex items-center justify-between gap-3 hover:bg-white/10 transition">
                 <div class="min-w-0">
                   <p class="text-[11px] uppercase tracking-[0.2em] text-gray-400 mb-1">{{ m.group }}</p>
-                  <p class="font-bold truncate">{{ m.teamA }} <span class="text-yellow-400">x</span> {{ m.teamB }}</p>
+                  <p class="font-bold truncate">{{ bandeira(m.teamA) }} {{ m.teamA }} <span class="text-yellow-400">x</span> {{ bandeira(m.teamB) }} {{ m.teamB }}</p>
                 </div>
                 <button @click="selectMatch(m)" class="shrink-0 px-4 py-2 rounded-xl font-black text-sm transition" :class="matches.some(x => x.id === m.id) ? 'bg-sky-500 text-slate-950 hover:bg-sky-400' : 'bg-green-500 text-slate-950 hover:bg-green-400'">
                   {{ matches.some(x => x.id === m.id) ? 'Editar' : '+ Adicionar' }}
@@ -196,14 +196,14 @@
 
             <select v-model.number="selectedMatchId" @change="saveAdminState" class="w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 text-white font-bold mb-5 outline-none focus:border-yellow-400/70">
               <option :value="null">Selecione um jogo...</option>
-              <option v-for="m in matches" :key="m.id" :value="m.id">{{ m.group }} - {{ m.teamA }} x {{ m.teamB }}</option>
+              <option v-for="m in matches" :key="m.id" :value="m.id">{{ m.group }} - {{ bandeira(m.teamA) }} {{ m.teamA }} x {{ bandeira(m.teamB) }} {{ m.teamB }}</option>
             </select>
 
             <div v-if="activeMatch" class="rounded-[24px] bg-black/35 border border-white/8 p-4 md:p-5">
               <div class="flex items-center justify-between gap-4 flex-wrap mb-5">
                 <div>
                   <p class="text-xs uppercase tracking-[0.25em] text-yellow-300">Jogo selecionado</p>
-                  <h4 class="text-xl md:text-2xl">{{ activeMatch.teamA }} <span class="text-yellow-400">x</span> {{ activeMatch.teamB }}</h4>
+                  <h4 class="text-xl md:text-2xl">{{ bandeira(activeMatch.teamA) }} {{ activeMatch.teamA }} <span class="text-yellow-400">x</span> {{ bandeira(activeMatch.teamB) }} {{ activeMatch.teamB }}</h4>
                   <p class="text-sm subtle-text mt-1">{{ activeMatch.group }}</p>
                 </div>
                 <label class="chip px-4 py-2 text-sm font-bold flex items-center gap-2 cursor-pointer" :class="activeMatch.isFinished ? 'status-live' : 'status-open'">
@@ -214,12 +214,12 @@
 
               <div class="grid grid-cols-[1fr_auto_1fr] gap-3 items-center mb-2">
                 <div class="rounded-2xl bg-green-500/10 border border-green-400/15 p-4 text-center">
-                  <p class="text-xs uppercase tracking-[0.2em] text-green-300 mb-2">{{ activeMatch.teamA }}</p>
+                  <p class="text-xs uppercase tracking-[0.2em] text-green-300 mb-2">{{ bandeira(activeMatch.teamA) }} {{ activeMatch.teamA }}</p>
                   <input type="number" min="0" max="20" :value="activeMatch.realScoreA" @input="atualizarPlacarReal(activeMatch, 'realScoreA', $event.target.value)" @change="saveAdminState" class="score-input mx-auto" />
                 </div>
                 <div class="text-yellow-400 font-black text-2xl md:text-4xl">X</div>
                 <div class="rounded-2xl bg-sky-500/10 border border-sky-400/15 p-4 text-center">
-                  <p class="text-xs uppercase tracking-[0.2em] text-sky-300 mb-2">{{ activeMatch.teamB }}</p>
+                  <p class="text-xs uppercase tracking-[0.2em] text-sky-300 mb-2">{{ bandeira(activeMatch.teamB) }} {{ activeMatch.teamB }}</p>
                   <input type="number" min="0" max="20" :value="activeMatch.realScoreB" @input="atualizarPlacarReal(activeMatch, 'realScoreB', $event.target.value)" @change="saveAdminState" class="score-input mx-auto" />
                 </div>
               </div>
@@ -296,7 +296,7 @@
                   <label class="text-[11px] uppercase tracking-[0.2em] text-gray-400 mb-2 block">Palpite de campeão</label>
                   <select v-model="participantForm.championPick" class="w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 text-white font-bold outline-none focus:border-yellow-400/70">
                     <option :value="null">Selecione...</option>
-                    <option v-for="team in ALL_TEAMS" :key="team" :value="team">{{ team }}</option>
+                    <option v-for="team in ALL_TEAMS" :key="team" :value="team">{{ bandeira(team) }} {{ team }}</option>
                   </select>
                 </div>
                 <div>
@@ -327,7 +327,7 @@
                 <label class="text-[11px] uppercase tracking-[0.2em] text-gray-400 mb-2 block">Campeão real</label>
                 <select v-model="settings.actualChampion" class="w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 text-white font-bold outline-none focus:border-yellow-400/70">
                   <option :value="null">Ainda não definido</option>
-                  <option v-for="team in ALL_TEAMS" :key="team" :value="team">{{ team }}</option>
+                  <option v-for="team in ALL_TEAMS" :key="team" :value="team">{{ bandeira(team) }} {{ team }}</option>
                 </select>
               </div>
               <div>
@@ -422,14 +422,14 @@
 
             <select v-model.number="selectedMatchId" @change="saveAdminState" :disabled="!(user && user.isAdmin)" class="w-full rounded-2xl bg-black/40 border border-yellow-400/25 px-4 py-4 text-white text-lg font-black outline-none focus:border-yellow-400/70 mb-5 disabled:opacity-70">
               <option v-if="matches.length === 0" :value="null">Nenhum jogo selecionado</option>
-              <option v-for="m in matches" :key="m.id" :value="m.id">{{ m.group }} | {{ m.teamA }} x {{ m.teamB }}</option>
+              <option v-for="m in matches" :key="m.id" :value="m.id">{{ m.group }} | {{ bandeira(m.teamA) }} {{ m.teamA }} x {{ bandeira(m.teamB) }} {{ m.teamB }}</option>
             </select>
 
             <div v-if="activeMatch" class="rounded-[24px] bg-black/35 border border-white/8 p-4 md:p-5">
               <div class="flex items-center justify-between gap-3 flex-wrap mb-5">
                 <div>
                   <p class="text-xs uppercase tracking-[0.25em] text-yellow-300">Jogo em exibição</p>
-                  <h4 class="text-2xl md:text-3xl">{{ activeMatch.teamA }} <span class="text-yellow-400">x</span> {{ activeMatch.teamB }}</h4>
+                  <h4 class="text-2xl md:text-3xl">{{ bandeira(activeMatch.teamA) }} {{ activeMatch.teamA }} <span class="text-yellow-400">x</span> {{ bandeira(activeMatch.teamB) }} {{ activeMatch.teamB }}</h4>
                   <p class="subtle-text text-sm mt-1">{{ activeMatch.group }}<span v-if="activeMatch.matchDate"> · {{ formatarDataHora(activeMatch) }}</span></p>
                 </div>
                 <span class="chip px-4 py-2 text-sm font-bold" :class="activeMatch.isFinished ? 'status-live' : 'status-open'">
@@ -437,18 +437,32 @@
                 </span>
               </div>
 
+              <div v-if="rodadaDestaque && (rodadaDestaque.campeoes.length || rodadaDestaque.bragres.length)" class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                <div v-if="rodadaDestaque.campeoes.length" class="rounded-2xl p-4 border border-yellow-400/30 bg-yellow-400/10">
+                  <p class="text-xs uppercase tracking-[0.25em] text-yellow-300 mb-1">🏆 Campeões da rodada</p>
+                  <p class="font-black text-sm md:text-base">{{ rodadaDestaque.campeoes.join(', ') }}</p>
+                </div>
+                <div v-if="rodadaDestaque.bragres.length" class="rounded-2xl p-4 border border-red-400/30 bg-red-400/10">
+                  <p class="text-xs uppercase tracking-[0.25em] text-red-300 mb-1">🤡 Bragres da rodada</p>
+                  <p class="font-black text-sm md:text-base">{{ rodadaDestaque.bragres.join(', ') }}</p>
+                </div>
+              </div>
+
               <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
-                <div v-for="pred in activeMatchPredictions" :key="pred.participant" class="rounded-[22px] p-4 border border-white/8 bg-gradient-to-b from-white/[0.08] to-white/[0.03] shadow-xl">
+                <div v-for="pred in activeMatchPredictions" :key="pred.participant" class="rounded-[22px] p-4 border bg-gradient-to-b from-white/[0.08] to-white/[0.03] shadow-xl"
+                  :class="rodadaDestaque && rodadaDestaque.campeoes.includes(pred.participant) ? 'border-yellow-400/60' : (rodadaDestaque && rodadaDestaque.bragres.includes(pred.participant) ? 'border-red-400/40' : 'border-white/8')">
                   <div class="flex items-start justify-between gap-3 mb-3">
                     <div class="min-w-0">
                       <p class="text-yellow-300 font-black truncate text-sm md:text-base">{{ pred.participant }}</p>
                       <p class="text-[11px] subtle-text">Palpite enviado</p>
                     </div>
-                    <span class="chip px-2 py-1 text-[10px] font-bold">⚽</span>
+                    <span class="chip px-2 py-1 text-[10px] font-bold">
+                      {{ rodadaDestaque && rodadaDestaque.campeoes.includes(pred.participant) ? '🏆' : (rodadaDestaque && rodadaDestaque.bragres.includes(pred.participant) ? '🤡' : '⚽') }}
+                    </span>
                   </div>
                   <div class="flex justify-between text-[10px] subtle-text mb-2 gap-2">
-                    <span class="truncate">{{ activeMatch.teamA }}</span>
-                    <span class="truncate text-right">{{ activeMatch.teamB }}</span>
+                    <span class="truncate">{{ bandeira(activeMatch.teamA) }} {{ activeMatch.teamA }}</span>
+                    <span class="truncate text-right">{{ activeMatch.teamB }} {{ bandeira(activeMatch.teamB) }}</span>
                   </div>
                   <div v-if="user && user.isAdmin" class="flex justify-center items-center gap-2">
                     <input type="number" min="0" max="99" :value="pred.scoreA"
