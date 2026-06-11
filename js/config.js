@@ -82,7 +82,8 @@ export function buildAllMatches() {
         teamB: teams[indexB],
         realScoreA: null,
         realScoreB: null,
-        isFinished: false
+        isFinished: false,
+        isLive: false
       });
     });
   });

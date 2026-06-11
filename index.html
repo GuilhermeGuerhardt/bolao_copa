@@ -91,8 +91,8 @@
             <div>
               <div class="flex flex-wrap items-center gap-2 mb-4">
                 <span class="chip px-3 py-1 text-xs font-bold text-yellow-300">⚽ Copa vibes</span>
-                <span class="chip px-3 py-1 text-xs font-bold" :class="activeMatch && activeMatch.isFinished ? 'status-live' : 'status-open'">
-                  {{ activeMatch && activeMatch.isFinished ? 'Finalizado' : 'Aberto para palpites' }}
+                <span class="chip px-3 py-1 text-xs font-bold" :class="matchStatusInfo(activeMatch).class">
+                  {{ matchStatusInfo(activeMatch).label }}
                 </span>
               </div>
 
@@ -147,8 +147,8 @@
                 </div>
                 <div class="mt-4 flex justify-between items-center text-xs subtle-text">
                   <span>{{ activeMatch.group }}<span v-if="activeMatch.matchDate"> · {{ formatarDataHora(activeMatch) }}</span></span>
-                  <span class="chip px-3 py-1" :class="activeMatch.isFinished ? 'status-live' : 'status-open'">
-                    {{ activeMatch.isFinished ? 'Resultado confirmado' : 'Aguardando resultado' }}
+                  <span class="chip px-3 py-1" :class="matchStatusInfo(activeMatch).class">
+                    {{ activeMatch.isFinished ? 'Resultado confirmado' : (activeMatch.isLive ? '🔴 Ao vivo' : 'Aguardando resultado') }}
                   </span>
                 </div>
               </div>
@@ -208,10 +208,11 @@
                   <h4 class="text-xl md:text-2xl">{{ bandeira(activeMatch.teamA) }} {{ activeMatch.teamA }} <span class="text-yellow-400">x</span> {{ bandeira(activeMatch.teamB) }} {{ activeMatch.teamB }}</h4>
                   <p class="text-sm subtle-text mt-1">{{ activeMatch.group }}</p>
                 </div>
-                <label class="chip px-4 py-2 text-sm font-bold flex items-center gap-2 cursor-pointer" :class="activeMatch.isFinished ? 'status-live' : 'status-open'">
-                  <input type="checkbox" v-model="activeMatch.isFinished" @change="saveAdminState" />
-                  {{ activeMatch.isFinished ? 'Jogo encerrado' : 'Jogo em aberto' }}
-                </label>
+                <div class="flex flex-wrap gap-2">
+                  <button type="button" @click="setMatchStatus(activeMatch, 'open')" class="chip px-3 py-2 text-xs font-bold transition" :class="!activeMatch.isLive && !activeMatch.isFinished ? 'status-open' : 'opacity-50 hover:opacity-80'">Aberto</button>
+                  <button type="button" @click="setMatchStatus(activeMatch, 'live')" class="chip px-3 py-2 text-xs font-bold transition" :class="activeMatch.isLive ? 'status-live' : 'opacity-50 hover:opacity-80'">🔴 Rolando</button>
+                  <button type="button" @click="setMatchStatus(activeMatch, 'finished')" class="chip px-3 py-2 text-xs font-bold transition" :class="activeMatch.isFinished ? 'status-finished' : 'opacity-50 hover:opacity-80'">Encerrado</button>
+                </div>
               </div>
 
               <div class="grid grid-cols-[1fr_auto_1fr] gap-3 items-center mb-2">
@@ -434,8 +435,8 @@
                   <h4 class="text-2xl md:text-3xl">{{ bandeira(activeMatch.teamA) }} {{ activeMatch.teamA }} <span class="text-yellow-400">x</span> {{ bandeira(activeMatch.teamB) }} {{ activeMatch.teamB }}</h4>
                   <p class="subtle-text text-sm mt-1">{{ activeMatch.group }}<span v-if="activeMatch.matchDate"> · {{ formatarDataHora(activeMatch) }}</span></p>
                 </div>
-                <span class="chip px-4 py-2 text-sm font-bold" :class="activeMatch.isFinished ? 'status-live' : 'status-open'">
-                  {{ activeMatch.isFinished ? 'Finalizado' : 'Em andamento' }}
+                <span class="chip px-4 py-2 text-sm font-bold" :class="matchStatusInfo(activeMatch).class">
+                  {{ activeMatch.isFinished ? 'Finalizado' : (activeMatch.isLive ? '🔴 Ao vivo' : 'Em andamento') }}
                 </span>
               </div>
 

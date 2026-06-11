@@ -84,6 +84,7 @@ async function initDb() {
     ALTER TABLE bolao_users ADD COLUMN IF NOT EXISTS "championPick" TEXT;
     ALTER TABLE bolao_users ADD COLUMN IF NOT EXISTS "topScorerPick" TEXT;
     ALTER TABLE bolao_matches ADD COLUMN IF NOT EXISTS "finishedAt" TIMESTAMPTZ;
+    ALTER TABLE bolao_matches ADD COLUMN IF NOT EXISTS "isLive" BOOLEAN NOT NULL DEFAULT FALSE;
     ALTER TABLE bolao_matches ADD COLUMN IF NOT EXISTS "matchDate" TEXT;
     ALTER TABLE bolao_matches ADD COLUMN IF NOT EXISTS "matchTime" TEXT;
 
@@ -313,20 +314,23 @@ app.put("/api/state", authMiddleware, adminMiddleware, async (req, res) => {
             finishedAt = existing?.isFinished && existing?.finishedAt ? existing.finishedAt : new Date().toISOString();
           }
 
+          const isLive = Boolean(m.isLive) && !isFinished;
+
           await client.query(
-            `INSERT INTO bolao_matches (id, "group", "teamA", "teamB", "realScoreA", "realScoreB", "isFinished", "finishedAt", "matchDate", "matchTime", "addedAt")
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            `INSERT INTO bolao_matches (id, "group", "teamA", "teamB", "realScoreA", "realScoreB", "isFinished", "isLive", "finishedAt", "matchDate", "matchTime", "addedAt")
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
              ON CONFLICT (id) DO UPDATE SET
                "realScoreA" = EXCLUDED."realScoreA",
                "realScoreB" = EXCLUDED."realScoreB",
                "isFinished" = EXCLUDED."isFinished",
+               "isLive" = EXCLUDED."isLive",
                "finishedAt" = EXCLUDED."finishedAt",
                "matchDate" = EXCLUDED."matchDate",
                "matchTime" = EXCLUDED."matchTime"`,
             [
               m.id, m.group, m.teamA, m.teamB,
               m.realScoreA ?? null, m.realScoreB ?? null,
-              isFinished, finishedAt, m.matchDate ?? null, m.matchTime ?? null,
+              isFinished, isLive, finishedAt, m.matchDate ?? null, m.matchTime ?? null,
               new Date().toISOString(),
             ]
           );
@@ -353,7 +357,7 @@ app.put("/api/state", authMiddleware, adminMiddleware, async (req, res) => {
 
 app.post("/api/state/limpar", authMiddleware, adminMiddleware, async (req, res) => {
   try {
-    await query(`UPDATE bolao_matches SET "realScoreA" = NULL, "realScoreB" = NULL, "isFinished" = FALSE`);
+    await query(`UPDATE bolao_matches SET "realScoreA" = NULL, "realScoreB" = NULL, "isFinished" = FALSE, "isLive" = FALSE`);
     await query(`UPDATE bolao_predictions SET "scoreA" = NULL, "scoreB" = NULL`);
     res.json({ ok: true });
   } catch (e) {
@@ -658,6 +662,7 @@ app.get("/api/n8n/current-match", n8nMiddleware, async (req, res) => {
       teamA: match.teamA,
       teamB: match.teamB,
       isFinished: Boolean(match.isFinished),
+      isLive: Boolean(match.isLive),
       matchDate: match.matchDate ?? null,
       matchTime: match.matchTime ?? null,
       hasStarted: matchHasStarted(match),
@@ -727,6 +732,9 @@ app.post("/api/n8n/predictions", n8nMiddleware, async (req, res) => {
     if (match.isFinished) {
       return res.status(409).json({ erro: "Esse jogo já foi encerrado." });
     }
+    if (match.isLive) {
+      return res.status(409).json({ erro: "Esse jogo já está rolando. Não é mais possível enviar palpites." });
+    }
     if (matchHasStarted(match)) {
       return res.status(409).json({ erro: "Esse jogo já começou. Não é mais possível enviar palpites." });
     }
@@ -794,6 +802,7 @@ function normalizeMatch(m) {
     realScoreA: m.realScoreA ?? null,
     realScoreB: m.realScoreB ?? null,
     isFinished: Boolean(m.isFinished),
+    isLive: Boolean(m.isLive),
     finishedAt: m.finishedAt ?? null,
     matchDate: m.matchDate ?? null,
     matchTime: m.matchTime ?? null,

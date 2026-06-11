@@ -202,4 +202,10 @@ input[type=number]::-webkit-outer-spin-button {
   border: 1px solid rgba(56,189,248,.25);
 }
 
+.status-finished {
+  background: rgba(234,179,8,.12);
+  color: #fde68a;
+  border: 1px solid rgba(234,179,8,.24);
+}
+
 .subtle-text { color: var(--muted); }

@@ -253,11 +253,24 @@ createApp({
           teamB: match.teamB,
           realScoreA: null,
           realScoreB: null,
-          isFinished: false
+          isFinished: false,
+          isLive: false
         });
       }
       this.selectedMatchId = match.id;
       this.saveAdminState();
+    },
+
+    setMatchStatus(match, status) {
+      match.isLive = status === 'live';
+      match.isFinished = status === 'finished';
+      this.saveAdminState();
+    },
+
+    matchStatusInfo(match) {
+      if (match && match.isFinished) return { class: 'status-finished', label: 'Finalizado' };
+      if (match && match.isLive) return { class: 'status-live', label: '🔴 Ao vivo' };
+      return { class: 'status-open', label: 'Aberto para palpites' };
     },
 
     exibirPlacar(value) {

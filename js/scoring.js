@@ -9,7 +9,7 @@ export function calculateRanking(participants, matches, predictions, settings = 
   });
 
   matches
-    .filter(match => match.isFinished)
+    .filter(match => match.isFinished || match.isLive)
     .forEach(match => {
       const realA = Number(match.realScoreA);
       const realB = Number(match.realScoreB);
