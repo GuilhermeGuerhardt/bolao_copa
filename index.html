@@ -450,35 +450,43 @@
                 </div>
               </div>
 
-              <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+              <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
                 <div v-for="pred in activeMatchPredictions" :key="pred.participant" class="rounded-[22px] p-4 border bg-gradient-to-b from-white/[0.08] to-white/[0.03] shadow-xl"
                   :class="rodadaDestaque && rodadaDestaque.campeoes.includes(pred.participant) ? 'border-yellow-400/60' : (rodadaDestaque && rodadaDestaque.bragres.includes(pred.participant) ? 'border-red-400/40' : 'border-white/8')">
-                  <div class="flex items-start justify-between gap-3 mb-3">
+                  <div class="flex items-start justify-between gap-2 mb-3">
                     <div class="min-w-0">
-                      <p class="text-yellow-300 font-black truncate text-sm md:text-base">{{ pred.participant }}</p>
+                      <p class="text-yellow-300 font-black leading-tight text-sm md:text-base line-clamp-2 min-h-[3rem]">{{ pred.participant }}</p>
                       <p class="text-[11px] subtle-text">Palpite enviado</p>
                     </div>
-                    <span class="chip px-2 py-1 text-[10px] font-bold">
+                    <span class="chip px-2 py-1 text-[10px] font-bold shrink-0">
                       {{ rodadaDestaque && rodadaDestaque.campeoes.includes(pred.participant) ? '🏆' : (rodadaDestaque && rodadaDestaque.bragres.includes(pred.participant) ? '🤡' : '⚽') }}
                     </span>
                   </div>
-                  <div class="flex justify-between text-[10px] subtle-text mb-2 gap-2">
-                    <span class="truncate">{{ bandeira(activeMatch.teamA) }} {{ activeMatch.teamA }}</span>
-                    <span class="truncate text-right">{{ activeMatch.teamB }} {{ bandeira(activeMatch.teamB) }}</span>
-                  </div>
-                  <div v-if="user && user.isAdmin" class="flex justify-center items-center gap-2">
-                    <input type="number" min="0" max="99" :value="pred.scoreA"
-                      @change="salvarPalpiteAdmin(pred, 'scoreA', $event.target.value)"
-                      class="score-box !min-w-[64px] !min-h-[56px] !text-2xl text-center bg-black/40 border border-yellow-400/25 rounded-2xl outline-none focus:border-yellow-400/70 text-white">
+                  <div v-if="user && user.isAdmin" class="flex justify-center items-center gap-3">
+                    <div class="flex flex-col items-center gap-1">
+                      <span class="text-lg leading-none">{{ bandeira(activeMatch.teamA) }}</span>
+                      <input type="number" min="0" max="99" :value="pred.scoreA"
+                        @change="salvarPalpiteAdmin(pred, 'scoreA', $event.target.value)"
+                        class="score-box !min-w-[56px] !min-h-[52px] !text-xl text-center bg-black/40 border border-yellow-400/25 rounded-2xl outline-none focus:border-yellow-400/70 text-white">
+                    </div>
                     <span class="text-yellow-400 font-black">X</span>
-                    <input type="number" min="0" max="99" :value="pred.scoreB"
-                      @change="salvarPalpiteAdmin(pred, 'scoreB', $event.target.value)"
-                      class="score-box !min-w-[64px] !min-h-[56px] !text-2xl text-center bg-black/40 border border-yellow-400/25 rounded-2xl outline-none focus:border-yellow-400/70 text-white">
+                    <div class="flex flex-col items-center gap-1">
+                      <span class="text-lg leading-none">{{ bandeira(activeMatch.teamB) }}</span>
+                      <input type="number" min="0" max="99" :value="pred.scoreB"
+                        @change="salvarPalpiteAdmin(pred, 'scoreB', $event.target.value)"
+                        class="score-box !min-w-[56px] !min-h-[52px] !text-xl text-center bg-black/40 border border-yellow-400/25 rounded-2xl outline-none focus:border-yellow-400/70 text-white">
+                    </div>
                   </div>
-                  <div v-else class="flex justify-center items-center gap-2">
-                    <div class="score-box !min-w-[64px] !min-h-[56px] !text-2xl">{{ exibirPlacar(pred.scoreA) }}</div>
+                  <div v-else class="flex justify-center items-center gap-3">
+                    <div class="flex flex-col items-center gap-1">
+                      <span class="text-lg leading-none">{{ bandeira(activeMatch.teamA) }}</span>
+                      <div class="score-box !min-w-[56px] !min-h-[52px] !text-xl">{{ exibirPlacar(pred.scoreA) }}</div>
+                    </div>
                     <span class="text-yellow-400 font-black">X</span>
-                    <div class="score-box !min-w-[64px] !min-h-[56px] !text-2xl">{{ exibirPlacar(pred.scoreB) }}</div>
+                    <div class="flex flex-col items-center gap-1">
+                      <span class="text-lg leading-none">{{ bandeira(activeMatch.teamB) }}</span>
+                      <div class="score-box !min-w-[56px] !min-h-[52px] !text-xl">{{ exibirPlacar(pred.scoreB) }}</div>
+                    </div>
                   </div>
                 </div>
               </div>
