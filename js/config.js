@@ -88,6 +88,11 @@ export function buildAllMatches() {
     });
   });
 
+  const suicaCatar = allMatches.find(m => m.teamA === 'Suíça' && m.teamB === 'Catar');
+  if (suicaCatar) {
+    [suicaCatar.teamA, suicaCatar.teamB] = [suicaCatar.teamB, suicaCatar.teamA];
+  }
+
   return allMatches;
 }
 
