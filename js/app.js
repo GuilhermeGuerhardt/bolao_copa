@@ -30,6 +30,7 @@ createApp({
       settings: { actualChampion: null, actualTopScorer: null, championBonusPoints: 0, topScorerBonusPoints: 0 },
 
       pollTimer: null,
+      eventSource: null,
       saveTimer: null,
       saveQueue: Promise.resolve(),
       savesInFlight: 0,
@@ -239,6 +240,14 @@ createApp({
       this.pollTimer = setInterval(() => {
         this.carregarEstado();
       }, 20000);
+    },
+
+    iniciarEventos() {
+      if (this.eventSource) this.eventSource.close();
+      this.eventSource = new EventSource(`${API}/events`);
+      this.eventSource.onmessage = () => {
+        this.carregarEstado();
+      };
     },
 
     iniciarCarrossel() {
@@ -579,6 +588,7 @@ createApp({
   async mounted() {
     await this.carregarEstado();
     this.iniciarPolling();
+    this.iniciarEventos();
     this.iniciarCarrossel();
     if (this.token) await this.carregarSessao();
   }

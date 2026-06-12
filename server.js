@@ -205,6 +205,16 @@ function sanitizeParticipant(p) {
   };
 }
 
+// ─── Eventos em tempo real (SSE) ────────────────────────────────────────────────
+
+const sseClients = new Set();
+
+function broadcastUpdate() {
+  for (const client of sseClients) {
+    client.write(`data: ${JSON.stringify({ type: "update", timestamp: Date.now() })}\n\n`);
+  }
+}
+
 // ─── App ─────────────────────────────────────────────────────────────────────
 
 const app = express();
@@ -212,6 +222,25 @@ app.use(cors({ origin: true }));
 app.use(express.json({ limit: "2mb" }));
 
 app.get("/api/health", (_, res) => res.json({ ok: true, api: "bolao", versao: 2 }));
+
+// ─── Eventos em tempo real (SSE) ────────────────────────────────────────────────
+
+app.get("/api/events", (req, res) => {
+  res.writeHead(200, {
+    "Content-Type": "text/event-stream",
+    "Cache-Control": "no-cache",
+    Connection: "keep-alive",
+  });
+  res.write("\n");
+  sseClients.add(res);
+
+  const heartbeat = setInterval(() => res.write(": ping\n\n"), 25000);
+
+  req.on("close", () => {
+    clearInterval(heartbeat);
+    sseClients.delete(res);
+  });
+});
 
 // ─── Autenticação ──────────────────────────────────────────────────────────────
 
@@ -340,6 +369,7 @@ app.put("/api/state", authMiddleware, adminMiddleware, async (req, res) => {
       }
 
       await client.query("COMMIT");
+      broadcastUpdate();
       res.json({ ok: true });
     } catch (e) {
       await client.query("ROLLBACK");
@@ -359,6 +389,7 @@ app.post("/api/state/limpar", authMiddleware, adminMiddleware, async (req, res) 
   try {
     await query(`UPDATE bolao_matches SET "realScoreA" = NULL, "realScoreB" = NULL, "isFinished" = FALSE, "isLive" = FALSE`);
     await query(`UPDATE bolao_predictions SET "scoreA" = NULL, "scoreB" = NULL`);
+    broadcastUpdate();
     res.json({ ok: true });
   } catch (e) {
     console.error("POST /api/state/limpar", e);
@@ -460,6 +491,7 @@ app.post("/api/admin/participants", authMiddleware, adminMiddleware, async (req,
       [nome, photo || null, phone || null, champion, topScorer]
     );
 
+    broadcastUpdate();
     res.json({ participant: sanitizeParticipant(participant) });
   } catch (e) {
     console.error("POST /api/admin/participants", e);
@@ -533,6 +565,7 @@ app.put("/api/admin/participants/:id", authMiddleware, adminMiddleware, async (r
       );
 
       await client.query("COMMIT");
+      broadcastUpdate();
       res.json({ participant: sanitizeParticipant(updated.rows[0]) });
     } catch (e) {
       await client.query("ROLLBACK");
@@ -558,6 +591,7 @@ app.delete("/api/admin/participants/:id", authMiddleware, adminMiddleware, async
       await client.query(`DELETE FROM bolao_predictions WHERE participant = $1`, [existing.name]);
       await client.query(`DELETE FROM bolao_participants WHERE id = $1`, [id]);
       await client.query("COMMIT");
+      broadcastUpdate();
       res.json({ ok: true });
     } catch (e) {
       await client.query("ROLLBACK");
@@ -592,6 +626,7 @@ app.put("/api/settings/special", authMiddleware, adminMiddleware, async (req, re
       );
     }
 
+    broadcastUpdate();
     res.json({ ok: true });
   } catch (e) {
     console.error("PUT /api/settings/special", e);
@@ -638,6 +673,7 @@ app.put("/api/admin/predictions", authMiddleware, adminMiddleware, async (req, r
       [match.id, part.name, placarA, placarB]
     );
 
+    broadcastUpdate();
     res.json({ ok: true, participant: part.name, matchId: match.id, prediction: { scoreA: placarA, scoreB: placarB } });
   } catch (e) {
     console.error("PUT /api/admin/predictions", e);
@@ -754,6 +790,7 @@ app.post("/api/n8n/predictions", n8nMiddleware, async (req, res) => {
       [match.id, participant.name, placarA, placarB]
     );
 
+    broadcastUpdate();
     res.json({
       ok: true,
       participant: participant.name,
