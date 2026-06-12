@@ -14,6 +14,8 @@
 
 * { box-sizing: border-box; }
 
+[v-cloak] { display: none; }
+
 body {
   margin: 0;
   font-family: 'Roboto', sans-serif;
@@ -142,6 +144,10 @@ input[type=number]::-webkit-outer-spin-button {
 .admin-scroll { max-height: 520px; overflow-y: auto; }
 .admin-scroll::-webkit-scrollbar { width: 8px; }
 .admin-scroll::-webkit-scrollbar-thumb { background: rgba(234,179,8,0.55); border-radius: 999px; }
+
+.ranking-scroll { max-height: 730px; overflow-y: auto; }
+.ranking-scroll::-webkit-scrollbar { width: 8px; }
+.ranking-scroll::-webkit-scrollbar-thumb { background: rgba(234,179,8,0.55); border-radius: 999px; }
 
 .rank-row {
   display: grid;

@@ -114,9 +114,7 @@ createApp({
       const total = this.ranking.length;
       if (total === 0) return [];
       const lastPlaces = this.ranking.slice(-3);
-      return lastPlaces
-        .map((item, idx) => ({ ...item, position: total - lastPlaces.length + idx + 1 }))
-        .reverse();
+      return lastPlaces.map((item, idx) => ({ ...item, position: total - lastPlaces.length + idx + 1 }));
     },
 
     rankingHistory() {

@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
-  <div id="app" class="min-h-screen pb-10">
+  <div id="app" v-cloak class="min-h-screen pb-10">
 
       <!-- Modal de login do admin -->
       <div v-if="showAdminLogin && !user" class="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/60 backdrop-blur-sm">
@@ -529,13 +529,13 @@
             <section class="glass rounded-[28px] p-5 md:p-6 card-glow">
               <div class="flex items-center justify-between gap-3 mb-4">
                 <div>
-                  <h3 class="text-xl text-red-300">Bagre</h3>
+                  <h3 class="text-xl text-red-300">BAGRES</h3>
                   <p class="text-sm subtle-text">Os 3 piores do momento.</p>
                 </div>
                 <span class="chip px-3 py-1 text-xs font-bold">🐟 Últimos 3</span>
               </div>
               <div class="grid grid-cols-1 gap-3">
-                <div v-for="(item, idx) in bagre" :key="item.name" class="rounded-2xl p-4 border border-white/8" :class="idx === 0 ? 'bagre-last' : idx === 1 ? 'bagre-second' : 'bagre-third'">
+                <div v-for="(item, idx) in bagre" :key="item.name" class="rounded-2xl p-4 border border-white/8" :class="idx === 2 ? 'bagre-last' : idx === 1 ? 'bagre-second' : 'bagre-third'">
                   <div class="flex items-center justify-between gap-3">
                     <div class="flex items-center gap-3 min-w-0">
                       <div class="w-11 h-11 rounded-2xl bg-black/30 flex items-center justify-center font-black text-lg">{{ item.position }}º</div>
@@ -561,7 +561,7 @@
                 </div>
                 <span class="chip px-3 py-1 text-xs font-bold">{{ ranking.length }} nomes</span>
               </div>
-              <div>
+              <div class="ranking-scroll">
                 <div v-for="(rank, index) in ranking" :key="rank.name" class="rank-row" :class="index < 3 ? 'bg-white/[0.03]' : ''">
                   <div class="w-11 h-11 rounded-2xl bg-black/35 border border-white/8 flex items-center justify-center font-black text-lg">{{ index + 1 }}º</div>
                   <img v-if="rank.photo" :src="rank.photo" class="rank-avatar" />
