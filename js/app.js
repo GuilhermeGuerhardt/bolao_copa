@@ -1,10 +1,8 @@
 import { createApp } from 'vue';
 import { normalizeState } from './storage.js';
-import { calculateRanking, calculateRankingHistory } from './scoring.js';
+import { calculateRanking } from './scoring.js';
 import { exportarBackup as downloadBackup, resizeImageToBase64 } from './utils.js';
 import { buildAllMatches, ALL_TEAMS, MATCH_DATES, TEAM_FLAGS } from './config.js';
-
-const CHART_COLORS = ['#facc15', '#38bdf8', '#34d399', '#f472b6', '#a78bfa', '#fb923c', '#22d3ee', '#f87171', '#4ade80', '#c084fc'];
 
 const API = '/api';
 const TOKEN_KEY = 'bolao_token';
@@ -131,24 +129,6 @@ createApp({
     jogoCarouselAtual() {
       if (!this.proximosJogos.length) return null;
       return this.proximosJogos[this.carouselIndex % this.proximosJogos.length];
-    },
-
-    rankingHistory() {
-      return calculateRankingHistory(this.participants, this.matches, this.predictions, this.settings);
-    },
-
-    rankingChartSeries() {
-      return this.participants.map((p, idx) => ({
-        name: p.name,
-        color: CHART_COLORS[idx % CHART_COLORS.length],
-        values: this.rankingHistory.map(step => step.points[p.name] ?? 0)
-      }));
-    },
-
-    rankingChartMax() {
-      let max = 0;
-      this.rankingChartSeries.forEach(series => series.values.forEach(v => { if (v > max) max = v; }));
-      return Math.max(max, 1);
     }
   },
 
@@ -370,18 +350,6 @@ createApp({
         predictions: this.predictions,
         selectedMatchId: this.selectedMatchId
       });
-    },
-
-    chartPoints(values) {
-      const w = 600, h = 220, pad = 16;
-      const n = values.length;
-      if (n <= 1) return '';
-      const max = this.rankingChartMax;
-      return values.map((v, i) => {
-        const x = pad + (i * (w - 2 * pad)) / (n - 1);
-        const y = h - pad - (v / max) * (h - 2 * pad);
-        return `${x.toFixed(1)},${y.toFixed(1)}`;
-      }).join(' ');
     },
 
     abrirPerfil() {
