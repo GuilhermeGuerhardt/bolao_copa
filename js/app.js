@@ -34,6 +34,9 @@ createApp({
       saveQueue: Promise.resolve(),
       savesInFlight: 0,
 
+      carouselIndex: 0,
+      carouselTimer: null,
+
       ALL_TEAMS,
       MATCH_DATES,
 
@@ -115,6 +118,18 @@ createApp({
       if (total === 0) return [];
       const lastPlaces = this.ranking.slice(-3);
       return lastPlaces.map((item, idx) => ({ ...item, position: total - lastPlaces.length + idx + 1 }));
+    },
+
+    proximosJogos() {
+      return this.matches
+        .filter(m => !m.isFinished && m.matchDate && m.matchTime)
+        .slice()
+        .sort((a, b) => new Date(`${a.matchDate}T${a.matchTime}`) - new Date(`${b.matchDate}T${b.matchTime}`));
+    },
+
+    jogoCarouselAtual() {
+      if (!this.proximosJogos.length) return null;
+      return this.proximosJogos[this.carouselIndex % this.proximosJogos.length];
     },
 
     rankingHistory() {
@@ -224,6 +239,25 @@ createApp({
       this.pollTimer = setInterval(() => {
         this.carregarEstado();
       }, 20000);
+    },
+
+    iniciarCarrossel() {
+      if (this.carouselTimer) clearInterval(this.carouselTimer);
+      this.carouselTimer = setInterval(() => {
+        if (this.proximosJogos.length > 1) {
+          this.carouselIndex = (this.carouselIndex + 1) % this.proximosJogos.length;
+        }
+      }, 5000);
+    },
+
+    carrosselAnterior() {
+      if (!this.proximosJogos.length) return;
+      this.carouselIndex = (this.carouselIndex - 1 + this.proximosJogos.length) % this.proximosJogos.length;
+    },
+
+    carrosselProximo() {
+      if (!this.proximosJogos.length) return;
+      this.carouselIndex = (this.carouselIndex + 1) % this.proximosJogos.length;
     },
 
     saveAdminState() {
@@ -545,6 +579,7 @@ createApp({
   async mounted() {
     await this.carregarEstado();
     this.iniciarPolling();
+    this.iniciarCarrossel();
     if (this.token) await this.carregarSessao();
   }
 }).mount('#app');

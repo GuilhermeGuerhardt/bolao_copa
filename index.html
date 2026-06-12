@@ -412,6 +412,45 @@
 
       <!-- Modo transmissão -->
       <main v-else class="max-w-7xl mx-auto px-4 md:px-6 pt-6 space-y-6">
+        <section class="glass rounded-[28px] p-5 md:p-6 card-glow">
+          <div class="flex items-center justify-between gap-3 mb-4 flex-wrap">
+            <div>
+              <h3 class="text-xl text-yellow-300">Próximos jogos</h3>
+              <p class="text-sm subtle-text">Ordem e horário das próximas partidas.</p>
+            </div>
+            <span class="chip px-3 py-1 text-xs font-bold">{{ proximosJogos.length }} agendados</span>
+          </div>
+
+          <div v-if="jogoCarouselAtual" class="flex items-center gap-2 md:gap-4">
+            <button @click="carrosselAnterior" :disabled="proximosJogos.length < 2" class="shrink-0 w-10 h-10 rounded-2xl glass flex items-center justify-center text-xl hover:bg-white/10 transition disabled:opacity-30">‹</button>
+
+            <div class="flex-1 rounded-[24px] bg-black/35 border border-white/8 p-4 md:p-6 text-center">
+              <p class="text-xs uppercase tracking-[0.25em] text-yellow-300 mb-3">{{ jogoCarouselAtual.group }}</p>
+              <div class="flex items-center justify-center gap-3 md:gap-6">
+                <div class="flex flex-col items-center gap-1 min-w-0">
+                  <span class="text-2xl md:text-3xl leading-none">{{ bandeira(jogoCarouselAtual.teamA) }}</span>
+                  <p class="font-black text-sm md:text-lg truncate">{{ jogoCarouselAtual.teamA }}</p>
+                </div>
+                <span class="text-yellow-400 font-black text-lg md:text-2xl">x</span>
+                <div class="flex flex-col items-center gap-1 min-w-0">
+                  <span class="text-2xl md:text-3xl leading-none">{{ bandeira(jogoCarouselAtual.teamB) }}</span>
+                  <p class="font-black text-sm md:text-lg truncate">{{ jogoCarouselAtual.teamB }}</p>
+                </div>
+              </div>
+              <p class="text-sm subtle-text mt-4">📅 {{ formatarDataHora(jogoCarouselAtual) }}</p>
+            </div>
+
+            <button @click="carrosselProximo" :disabled="proximosJogos.length < 2" class="shrink-0 w-10 h-10 rounded-2xl glass flex items-center justify-center text-xl hover:bg-white/10 transition disabled:opacity-30">›</button>
+          </div>
+          <div v-else class="rounded-[24px] bg-black/35 border border-dashed border-white/12 p-8 text-center subtle-text">
+            Nenhum jogo agendado no momento.
+          </div>
+
+          <div v-if="proximosJogos.length > 1" class="flex justify-center gap-2 mt-4">
+            <button v-for="(jogo, idx) in proximosJogos" :key="jogo.id" @click="carouselIndex = idx" class="w-2.5 h-2.5 rounded-full transition" :class="idx === (carouselIndex % proximosJogos.length) ? 'bg-yellow-400' : 'bg-white/20'"></button>
+          </div>
+        </section>
+
         <section class="grid grid-cols-1 xl:grid-cols-[1.2fr_.8fr] gap-6">
 
           <div class="glass rounded-[28px] p-5 md:p-6 card-glow">
