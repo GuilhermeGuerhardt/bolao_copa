@@ -482,20 +482,20 @@
                 </span>
               </div>
 
-              <div v-if="rodadaDestaque && (rodadaDestaque.campeoes.length || rodadaDestaque.bragres.length)" class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+              <div v-if="rodadaDestaque && (rodadaDestaque.campeoes.length || rodadaDestaque.bagres.length)" class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
                 <div v-if="rodadaDestaque.campeoes.length" class="rounded-2xl p-4 border border-yellow-400/30 bg-yellow-400/10">
                   <p class="text-xs uppercase tracking-[0.25em] text-yellow-300 mb-1">🏆 Campeões da rodada</p>
                   <p class="font-black text-sm md:text-base">{{ rodadaDestaque.campeoes.join(', ') }}</p>
                 </div>
-                <div v-if="rodadaDestaque.bragres.length" class="rounded-2xl p-4 border border-red-400/30 bg-red-400/10">
-                  <p class="text-xs uppercase tracking-[0.25em] text-red-300 mb-1">🤡 Bragres da rodada</p>
-                  <p class="font-black text-sm md:text-base">{{ rodadaDestaque.bragres.join(', ') }}</p>
+                <div v-if="rodadaDestaque.bagres.length" class="rounded-2xl p-4 border border-red-400/30 bg-red-400/10">
+                  <p class="text-xs uppercase tracking-[0.25em] text-red-300 mb-1">🤡 Bagres da rodada</p>
+                  <p class="font-black text-sm md:text-base">{{ rodadaDestaque.bagres.join(', ') }}</p>
                 </div>
               </div>
 
               <div class="flex flex-col gap-2">
                 <div v-for="pred in activeMatchPredictions" :key="pred.participant" class="rounded-2xl p-2 border bg-gradient-to-b from-white/[0.08] to-white/[0.03] shadow-xl flex items-center justify-between gap-3"
-                  :class="rodadaDestaque && rodadaDestaque.campeoes.includes(pred.participant) ? 'border-yellow-400/60' : (rodadaDestaque && rodadaDestaque.bragres.includes(pred.participant) ? 'border-red-400/40' : 'border-white/8')">
+                  :class="rodadaDestaque && rodadaDestaque.campeoes.includes(pred.participant) ? 'border-yellow-400/60' : (rodadaDestaque && rodadaDestaque.bagres.includes(pred.participant) ? 'border-red-400/40' : 'border-white/8')">
                   <div class="min-w-0">
                     <p class="text-yellow-300 font-black leading-tight text-sm md:text-base truncate">{{ pred.participant }}</p>
                     <p class="text-[11px] subtle-text">Palpite enviado</p>

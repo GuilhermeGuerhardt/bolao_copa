@@ -87,7 +87,7 @@ createApp({
       if (match.realScoreA === null || match.realScoreB === null || Number.isNaN(realA) || Number.isNaN(realB)) return null;
 
       const campeoes = [];
-      const bragres = [];
+      const bagres = [];
 
       this.activeMatchPredictions.forEach(pred => {
         const predA = Number(pred.scoreA);
@@ -97,11 +97,11 @@ createApp({
         if (predA === realA && predB === realB) {
           campeoes.push(pred.participant);
         } else if (Math.sign(predA - predB) !== Math.sign(realA - realB)) {
-          bragres.push(pred.participant);
+          bagres.push(pred.participant);
         }
       });
 
-      return { campeoes, bragres };
+      return { campeoes, bagres };
     },
 
     ranking() {
