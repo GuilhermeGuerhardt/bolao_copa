@@ -198,23 +198,22 @@ createApp({
         const raw = await res.json();
         const normalized = normalizeState(raw);
 
-        // Enquanto o admin está digitando um placar de palpite, não sobrescreve
-        // predictions (evita que o valor digitado "desapareça" antes do @change).
-        if (this.editingPalpiteCount === 0) {
-          this.predictions = normalized.predictions;
+        // Enquanto houver edições do admin em andamento (placar real com save
+        // pendente, ou campo de palpite focado), não sobrescreve o estado local:
+        // qualquer reatribuição força o Vue a re-renderizar e reescrever o
+        // value dos inputs, apagando o que está sendo digitado.
+        if (this.saveTimer !== null || this.savesInFlight > 0 || this.editingPalpiteCount > 0) {
+          return;
         }
+
+        this.predictions = normalized.predictions;
         this.participants = normalized.participants;
         this.settings = normalized.settings;
+        this.matches = normalized.matches;
+        this.selectedMatchId = normalized.selectedMatchId;
 
-        // Enquanto houver edições do admin pendentes (debounce ou PUT em andamento),
-        // não sobrescreve matches/selectedMatchId com o estado (possivelmente desatualizado) do servidor.
-        if (this.saveTimer === null && this.savesInFlight === 0) {
-          this.matches = normalized.matches;
-          this.selectedMatchId = normalized.selectedMatchId;
-
-          if (this.matches.length && (this.selectedMatchId === null || !this.matches.some(m => m.id === this.selectedMatchId))) {
-            this.selectedMatchId = this.matches[0].id;
-          }
+        if (this.matches.length && (this.selectedMatchId === null || !this.matches.some(m => m.id === this.selectedMatchId))) {
+          this.selectedMatchId = this.matches[0].id;
         }
       } catch {
         // mantém o estado atual em caso de falha de rede
