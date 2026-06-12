@@ -503,10 +503,14 @@
                   <div v-if="user && user.isAdmin" class="flex items-center gap-2 shrink-0">
                     <span class="hidden sm:inline text-lg leading-none">{{ bandeira(activeMatch.teamA) }}</span>
                     <input type="number" min="0" max="99" :value="pred.scoreA"
+                      @focus="editingPalpiteCount++"
+                      @blur="editingPalpiteCount--"
                       @change="salvarPalpiteAdmin(pred, 'scoreA', $event.target.value)"
                       class="score-box !min-w-[56px] !min-h-[52px] !text-xl text-center bg-black/40 border border-yellow-400/25 rounded-2xl outline-none focus:border-yellow-400/70 text-white">
                     <span class="text-yellow-400 font-black">X</span>
                     <input type="number" min="0" max="99" :value="pred.scoreB"
+                      @focus="editingPalpiteCount++"
+                      @blur="editingPalpiteCount--"
                       @change="salvarPalpiteAdmin(pred, 'scoreB', $event.target.value)"
                       class="score-box !min-w-[56px] !min-h-[52px] !text-xl text-center bg-black/40 border border-yellow-400/25 rounded-2xl outline-none focus:border-yellow-400/70 text-white">
                     <span class="hidden sm:inline text-lg leading-none">{{ bandeira(activeMatch.teamB) }}</span>

@@ -32,6 +32,7 @@ createApp({
       saveTimer: null,
       saveQueue: Promise.resolve(),
       savesInFlight: 0,
+      editingPalpiteCount: 0,
 
       carouselIndex: 0,
       carouselTimer: null,
@@ -196,7 +197,12 @@ createApp({
 
         const raw = await res.json();
         const normalized = normalizeState(raw);
-        this.predictions = normalized.predictions;
+
+        // Enquanto o admin está digitando um placar de palpite, não sobrescreve
+        // predictions (evita que o valor digitado "desapareça" antes do @change).
+        if (this.editingPalpiteCount === 0) {
+          this.predictions = normalized.predictions;
+        }
         this.participants = normalized.participants;
         this.settings = normalized.settings;
 
