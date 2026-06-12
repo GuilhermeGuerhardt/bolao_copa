@@ -529,6 +529,33 @@
             <section class="glass rounded-[28px] p-5 md:p-6 card-glow">
               <div class="flex items-center justify-between gap-3 mb-4">
                 <div>
+                  <h3 class="text-xl text-red-300">Bagre</h3>
+                  <p class="text-sm subtle-text">Os 3 piores do momento.</p>
+                </div>
+                <span class="chip px-3 py-1 text-xs font-bold">🐟 Últimos 3</span>
+              </div>
+              <div class="grid grid-cols-1 gap-3">
+                <div v-for="(item, idx) in bagre" :key="item.name" class="rounded-2xl p-4 border border-white/8" :class="idx === 0 ? 'bagre-last' : idx === 1 ? 'bagre-second' : 'bagre-third'">
+                  <div class="flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-3 min-w-0">
+                      <div class="w-11 h-11 rounded-2xl bg-black/30 flex items-center justify-center font-black text-lg">{{ item.position }}º</div>
+                      <img v-if="item.photo" :src="item.photo" class="rank-avatar" />
+                      <div v-else class="rank-avatar-placeholder">{{ item.name.charAt(0).toUpperCase() }}</div>
+                      <div class="min-w-0">
+                        <p class="font-black truncate">{{ item.name }}</p>
+                        <p class="text-xs subtle-text">Pontuação atual</p>
+                      </div>
+                    </div>
+                    <div class="text-xl font-black text-red-300">{{ item.points }} pts</div>
+                  </div>
+                </div>
+                <div v-if="bagre.length === 0" class="text-sm subtle-text">Sem dados ainda.</div>
+              </div>
+            </section>
+
+            <section class="glass rounded-[28px] p-5 md:p-6 card-glow">
+              <div class="flex items-center justify-between gap-3 mb-4">
+                <div>
                   <h3 class="text-xl text-yellow-300">Ranking geral</h3>
                   <p class="text-sm subtle-text">Classificação completa do bolão.</p>
                 </div>

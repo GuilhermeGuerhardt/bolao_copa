@@ -189,6 +189,9 @@ input[type=number]::-webkit-outer-spin-button {
 .podium-gold { background: linear-gradient(180deg, rgba(234,179,8,.24), rgba(234,179,8,.08)); }
 .podium-silver { background: linear-gradient(180deg, rgba(226,232,240,.18), rgba(226,232,240,.06)); }
 .podium-bronze { background: linear-gradient(180deg, rgba(180,83,9,.3), rgba(180,83,9,.08)); }
+.bagre-last { background: linear-gradient(180deg, rgba(239,68,68,.28), rgba(239,68,68,.1)); }
+.bagre-second { background: linear-gradient(180deg, rgba(239,68,68,.18), rgba(239,68,68,.06)); }
+.bagre-third { background: linear-gradient(180deg, rgba(239,68,68,.1), rgba(239,68,68,.04)); }
 
 .status-live {
   background: rgba(34,197,94,.12);

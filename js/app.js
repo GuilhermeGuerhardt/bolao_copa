@@ -110,6 +110,15 @@ createApp({
       return this.ranking.slice(0, 3);
     },
 
+    bagre() {
+      const total = this.ranking.length;
+      if (total === 0) return [];
+      const lastPlaces = this.ranking.slice(-3);
+      return lastPlaces
+        .map((item, idx) => ({ ...item, position: total - lastPlaces.length + idx + 1 }))
+        .reverse();
+    },
+
     rankingHistory() {
       return calculateRankingHistory(this.participants, this.matches, this.predictions, this.settings);
     },
