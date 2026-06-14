@@ -353,6 +353,12 @@ createApp({
       return team ? `${this.bandeira(team)} ${team}`.trim() : 'A definir';
     },
 
+    bracketTeamClass(match, side) {
+      if (!match || !match[side]) return 'is-pending';
+      if (match.isFinished && getMatchLoser(match) === match[side]) return 'is-eliminated';
+      return '';
+    },
+
     adicionarTimeClassificado() {
       if (!this.novoTimeClassificado) return;
       if (!this.settings.qualifiedTeams.includes(this.novoTimeClassificado)) {

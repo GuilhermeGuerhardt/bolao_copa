@@ -283,3 +283,69 @@ input[type=number]::-webkit-outer-spin-button {
 }
 
 .subtle-text { color: var(--muted); }
+
+/* ── Chave do mata-mata (bracket) ─────────────────────────── */
+.bracket-round {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  height: 26rem;
+  min-width: 150px;
+  flex-shrink: 0;
+}
+
+.bracket-pair {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border-right: 2px solid var(--gold);
+  padding-right: 16px;
+  margin-right: 16px;
+}
+
+.bracket-pair::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: -16px;
+  width: 16px;
+  height: 2px;
+  background: var(--gold);
+}
+
+.bracket-pair .bracket-team:first-child {
+  border-bottom: 2px solid var(--gold);
+  padding-bottom: 5px;
+  margin-bottom: 5px;
+}
+
+.bracket-final {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 26rem;
+  min-width: 150px;
+  flex-shrink: 0;
+}
+
+.bracket-team {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.bracket-team.is-pending {
+  color: var(--muted);
+  font-style: italic;
+  font-weight: 400;
+}
+
+.bracket-team.is-eliminated {
+  color: #6b7280;
+  text-decoration: line-through;
+  font-weight: 400;
+}
