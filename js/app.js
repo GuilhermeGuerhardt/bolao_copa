@@ -1,7 +1,7 @@
 import { createApp } from 'vue';
 import { normalizeState } from './storage.js';
 import { calculateRanking } from './scoring.js';
-import { exportarBackup as downloadBackup, resizeImageToBase64 } from './utils.js';
+import { exportarBackup as downloadBackup, resizeImageToBase64, downloadCSV, parseCSV } from './utils.js';
 import { buildAllMatches, ALL_TEAMS, MATCH_DATES, TEAM_FLAGS } from './config.js';
 
 const API = '/api';
@@ -51,7 +51,12 @@ createApp({
       participantFormSaving: false,
       participantDeleteConfirm: null,
 
-      specialSettingsMessage: ''
+      specialSettingsMessage: '',
+
+      palpitesCsvMessage: '',
+      palpitesCsvError: '',
+      backupRestoreMessage: '',
+      backupRestoreError: ''
     };
   },
 
@@ -353,8 +358,141 @@ createApp({
         participants: this.participants,
         matches: this.matches,
         predictions: this.predictions,
+        settings: this.settings,
         selectedMatchId: this.selectedMatchId
       });
+    },
+
+    async restaurarBackup(e) {
+      const file = e.target.files?.[0];
+      e.target.value = '';
+      if (!file) return;
+
+      this.backupRestoreMessage = '';
+      this.backupRestoreError = '';
+
+      let backup;
+      try {
+        backup = JSON.parse(await file.text());
+      } catch {
+        this.backupRestoreError = 'Arquivo JSON inválido.';
+        return;
+      }
+
+      if (!confirm('Isso vai substituir os jogos, palpites e configurações atuais pelo conteúdo deste backup. Deseja continuar?')) {
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API}/admin/restore`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...this.authHeaders() },
+          body: JSON.stringify(backup)
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          this.backupRestoreError = data.erro || 'Erro ao restaurar backup.';
+          return;
+        }
+        this.backupRestoreMessage = 'Backup restaurado com sucesso!';
+        await this.carregarParticipantesAdmin();
+        await this.carregarEstado();
+      } catch {
+        this.backupRestoreError = 'Erro ao conectar com o servidor.';
+      }
+    },
+
+    nomeArquivoPalpites(prefixo) {
+      if (!this.activeMatch) return `${prefixo}.csv`;
+      const slug = `${this.activeMatch.teamA}-x-${this.activeMatch.teamB}`
+        .toLowerCase()
+        .normalize('NFD').replace(/[̀-ͯ]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+      return `${prefixo}-${slug}.csv`;
+    },
+
+    baixarModeloPalpitesCSV() {
+      if (!this.activeMatch) return;
+      const rows = [['Participante', `Placar ${this.activeMatch.teamA}`, `Placar ${this.activeMatch.teamB}`]];
+      this.activeMatchPredictions.forEach(pred => rows.push([pred.participant, '', '']));
+      downloadCSV(this.nomeArquivoPalpites('modelo-palpites'), rows);
+    },
+
+    exportarPalpitesCSV() {
+      if (!this.activeMatch) return;
+      const rows = [['Participante', `Placar ${this.activeMatch.teamA}`, `Placar ${this.activeMatch.teamB}`]];
+      this.activeMatchPredictions.forEach(pred => rows.push([pred.participant, pred.scoreA ?? '', pred.scoreB ?? '']));
+      downloadCSV(this.nomeArquivoPalpites('palpites'), rows);
+    },
+
+    async importarPalpitesCSV(e) {
+      const file = e.target.files?.[0];
+      e.target.value = '';
+      if (!file || !this.selectedMatchId) return;
+
+      this.palpitesCsvMessage = '';
+      this.palpitesCsvError = '';
+
+      const linhas = parseCSV(await file.text());
+      const dados = linhas.slice(1); // ignora cabeçalho
+
+      const participantesValidos = new Set(this.participants.map(p => p.name));
+      const predictions = [];
+      const naoEncontrados = [];
+      const invalidos = [];
+
+      for (const linha of dados) {
+        const nome = (linha[0] ?? '').trim();
+        if (!nome) continue;
+
+        if (!participantesValidos.has(nome)) {
+          naoEncontrados.push(nome);
+          continue;
+        }
+
+        const scoreA = (linha[1] ?? '').trim();
+        const scoreB = (linha[2] ?? '').trim();
+        const valido = (v) => v === '' || (Number.isInteger(Number(v)) && Number(v) >= 0 && Number(v) <= 99);
+
+        if (!valido(scoreA) || !valido(scoreB)) {
+          invalidos.push(nome);
+          continue;
+        }
+
+        predictions.push({
+          participant: nome,
+          scoreA: scoreA === '' ? null : Number(scoreA),
+          scoreB: scoreB === '' ? null : Number(scoreB)
+        });
+      }
+
+      if (!predictions.length) {
+        this.palpitesCsvError = 'Nenhum palpite válido encontrado no arquivo.';
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API}/admin/predictions/bulk`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', ...this.authHeaders() },
+          body: JSON.stringify({ matchId: this.selectedMatchId, predictions })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          this.palpitesCsvError = data.erro || 'Erro ao importar palpites.';
+          return;
+        }
+
+        const problemas = [...naoEncontrados, ...invalidos, ...(data.notFound || []), ...(data.invalid || [])];
+        this.palpitesCsvMessage = `${data.updated} palpite(s) importado(s) com sucesso.`;
+        if (problemas.length) {
+          this.palpitesCsvMessage += ` Ignorados: ${problemas.join(', ')}.`;
+        }
+        await this.carregarEstado();
+      } catch {
+        this.palpitesCsvError = 'Erro ao conectar com o servidor.';
+      }
     },
 
     abrirPerfil() {

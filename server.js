@@ -397,6 +397,144 @@ app.post("/api/state/limpar", authMiddleware, adminMiddleware, async (req, res) 
   }
 });
 
+// ─── Restaurar backup completo (somente admin) ─────────────────────────────────
+
+app.post("/api/admin/restore", authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const { participants = [], matches = [], predictions = [], settings = {}, selectedMatchId = null } = req.body || {};
+
+    if (!Array.isArray(participants) || !Array.isArray(matches) || !Array.isArray(predictions)) {
+      return res.status(400).json({ erro: "Arquivo de backup inválido." });
+    }
+
+    const validMatches = matches
+      .map((m) => ({
+        id: Number(m?.id),
+        group: String(m?.group ?? ""),
+        teamA: String(m?.teamA ?? ""),
+        teamB: String(m?.teamB ?? ""),
+        realScoreA: m?.realScoreA === null || m?.realScoreA === undefined ? null : Number(m.realScoreA),
+        realScoreB: m?.realScoreB === null || m?.realScoreB === undefined ? null : Number(m.realScoreB),
+        isFinished: Boolean(m?.isFinished),
+        isLive: Boolean(m?.isLive),
+        finishedAt: m?.finishedAt ?? null,
+        matchDate: m?.matchDate ?? null,
+        matchTime: m?.matchTime ?? null,
+      }))
+      .filter((m) => Number.isInteger(m.id));
+
+    const matchIds = validMatches.map((m) => m.id);
+
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+
+      if (matchIds.length > 0) {
+        await client.query(`DELETE FROM bolao_matches WHERE id != ALL($1)`, [matchIds]);
+      } else {
+        await client.query(`DELETE FROM bolao_matches`);
+      }
+
+      for (const m of validMatches) {
+        await client.query(
+          `INSERT INTO bolao_matches (id, "group", "teamA", "teamB", "realScoreA", "realScoreB", "isFinished", "isLive", "finishedAt", "matchDate", "matchTime", "addedAt")
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+           ON CONFLICT (id) DO UPDATE SET
+             "group" = EXCLUDED."group",
+             "teamA" = EXCLUDED."teamA",
+             "teamB" = EXCLUDED."teamB",
+             "realScoreA" = EXCLUDED."realScoreA",
+             "realScoreB" = EXCLUDED."realScoreB",
+             "isFinished" = EXCLUDED."isFinished",
+             "isLive" = EXCLUDED."isLive",
+             "finishedAt" = EXCLUDED."finishedAt",
+             "matchDate" = EXCLUDED."matchDate",
+             "matchTime" = EXCLUDED."matchTime"`,
+          [
+            m.id, m.group, m.teamA, m.teamB,
+            m.realScoreA, m.realScoreB,
+            m.isFinished, m.isLive, m.finishedAt, m.matchDate, m.matchTime,
+            new Date().toISOString(),
+          ]
+        );
+      }
+
+      const selId = Number.isInteger(Number(selectedMatchId)) && matchIds.includes(Number(selectedMatchId))
+        ? Number(selectedMatchId)
+        : null;
+      await client.query(
+        `INSERT INTO bolao_settings (key, value) VALUES ('selectedMatchId', $1)
+         ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
+        [selId !== null ? String(selId) : null]
+      );
+
+      const settingsEntries = [
+        ["actualChampion", settings?.actualChampion ? String(settings.actualChampion).trim().slice(0, 100) : null],
+        ["actualTopScorer", settings?.actualTopScorer ? String(settings.actualTopScorer).trim().slice(0, 100) : null],
+        ["championBonusPoints", String(Number(settings?.championBonusPoints) || 0)],
+        ["topScorerBonusPoints", String(Number(settings?.topScorerBonusPoints) || 0)],
+      ];
+      for (const [key, value] of settingsEntries) {
+        await client.query(
+          `INSERT INTO bolao_settings (key, value) VALUES ($1, $2)
+           ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
+          [key, value]
+        );
+      }
+
+      for (const p of participants) {
+        const nome = normalizeDisplayNameInput(p?.name);
+        if (!nome) continue;
+        await client.query(
+          `INSERT INTO bolao_participants (name, photo, "championPick", "topScorerPick")
+           VALUES ($1, $2, $3, $4)
+           ON CONFLICT (name) DO UPDATE SET
+             photo = EXCLUDED.photo,
+             "championPick" = EXCLUDED."championPick",
+             "topScorerPick" = EXCLUDED."topScorerPick"`,
+          [nome, p?.photo ?? null, p?.championPick ?? null, p?.topScorerPick ?? null]
+        );
+      }
+
+      await client.query(`DELETE FROM bolao_predictions`);
+      const matchIdSet = new Set(matchIds);
+      const isValidScore = (v) => v === null || v === undefined || v === "" || (Number.isInteger(Number(v)) && Number(v) >= 0 && Number(v) <= 99);
+      for (const pred of predictions) {
+        const pMatchId = Number(pred?.matchId);
+        if (!matchIdSet.has(pMatchId)) continue;
+        const nome = normalizeDisplayNameInput(pred?.participant);
+        if (!nome) continue;
+        if (!isValidScore(pred?.scoreA) || !isValidScore(pred?.scoreB)) continue;
+
+        const placarA = pred.scoreA === null || pred.scoreA === undefined || pred.scoreA === "" ? null : Number(pred.scoreA);
+        const placarB = pred.scoreB === null || pred.scoreB === undefined || pred.scoreB === "" ? null : Number(pred.scoreB);
+
+        await client.query(
+          `INSERT INTO bolao_predictions ("matchId", participant, "scoreA", "scoreB")
+           VALUES ($1, $2, $3, $4)
+           ON CONFLICT ("matchId", participant) DO UPDATE SET
+             "scoreA" = EXCLUDED."scoreA",
+             "scoreB" = EXCLUDED."scoreB"`,
+          [pMatchId, nome, placarA, placarB]
+        );
+      }
+
+      await client.query("COMMIT");
+    } catch (e) {
+      await client.query("ROLLBACK");
+      throw e;
+    } finally {
+      client.release();
+    }
+
+    broadcastUpdate();
+    res.json({ ok: true });
+  } catch (e) {
+    console.error("POST /api/admin/restore", e);
+    res.status(500).json({ erro: "Erro ao restaurar backup." });
+  }
+});
+
 // ─── Perfil do usuário logado ──────────────────────────────────────────────────
 
 app.put("/api/profile", authMiddleware, async (req, res) => {
@@ -678,6 +816,77 @@ app.put("/api/admin/predictions", authMiddleware, adminMiddleware, async (req, r
   } catch (e) {
     console.error("PUT /api/admin/predictions", e);
     res.status(500).json({ erro: "Erro ao salvar palpite." });
+  }
+});
+
+app.put("/api/admin/predictions/bulk", authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const { matchId, predictions } = req.body || {};
+
+    const id = Number(matchId);
+    if (!Number.isInteger(id)) {
+      return res.status(400).json({ erro: "Jogo inválido." });
+    }
+    if (!Array.isArray(predictions)) {
+      return res.status(400).json({ erro: "Lista de palpites inválida." });
+    }
+
+    const match = await queryOne(`SELECT id FROM bolao_matches WHERE id = $1`, [id]);
+    if (!match) {
+      return res.status(404).json({ erro: "Jogo não encontrado." });
+    }
+
+    const participantRows = await query(`SELECT name FROM bolao_participants`);
+    const participantNames = new Set(participantRows.map((p) => p.name));
+
+    const isValidScore = (v) => v === null || v === undefined || v === "" || (Number.isInteger(Number(v)) && Number(v) >= 0 && Number(v) <= 99);
+
+    let updated = 0;
+    const notFound = [];
+    const invalid = [];
+
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+
+      for (const item of predictions) {
+        const nome = normalizeDisplayNameInput(item?.participant);
+        if (!participantNames.has(nome)) {
+          notFound.push(item?.participant ?? "");
+          continue;
+        }
+        if (!isValidScore(item?.scoreA) || !isValidScore(item?.scoreB)) {
+          invalid.push(nome);
+          continue;
+        }
+
+        const placarA = item.scoreA === null || item.scoreA === undefined || item.scoreA === "" ? null : Number(item.scoreA);
+        const placarB = item.scoreB === null || item.scoreB === undefined || item.scoreB === "" ? null : Number(item.scoreB);
+
+        await client.query(
+          `INSERT INTO bolao_predictions ("matchId", participant, "scoreA", "scoreB")
+           VALUES ($1, $2, $3, $4)
+           ON CONFLICT ("matchId", participant) DO UPDATE SET
+             "scoreA" = EXCLUDED."scoreA",
+             "scoreB" = EXCLUDED."scoreB"`,
+          [id, nome, placarA, placarB]
+        );
+        updated++;
+      }
+
+      await client.query("COMMIT");
+    } catch (e) {
+      await client.query("ROLLBACK");
+      throw e;
+    } finally {
+      client.release();
+    }
+
+    broadcastUpdate();
+    res.json({ ok: true, updated, notFound, invalid });
+  } catch (e) {
+    console.error("PUT /api/admin/predictions/bulk", e);
+    res.status(500).json({ erro: "Erro ao importar palpites." });
   }
 });
 

@@ -192,9 +192,16 @@
               </div>
               <div class="flex flex-wrap gap-2">
                 <button @click="exportarBackup" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-black text-sm">💾 Backup</button>
+                <label class="cursor-pointer px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-sm">
+                  📁 Restaurar
+                  <input type="file" accept="application/json" @change="restaurarBackup" class="hidden" />
+                </label>
                 <button @click="limparSomentePlacar" class="px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-black text-sm">🧹 Limpar</button>
               </div>
             </div>
+
+            <p v-if="backupRestoreMessage" class="text-green-400 text-sm mb-3">{{ backupRestoreMessage }}</p>
+            <p v-if="backupRestoreError" class="text-red-400 text-sm mb-3">{{ backupRestoreError }}</p>
 
             <select v-model.number="selectedMatchId" @change="saveAdminState" class="w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 text-white font-bold mb-5 outline-none focus:border-yellow-400/70">
               <option :value="null">Selecione um jogo...</option>
@@ -492,6 +499,17 @@
                   <p class="font-black text-sm md:text-base">{{ rodadaDestaque.bagres.join(', ') }}</p>
                 </div>
               </div>
+
+              <div v-if="user && user.isAdmin" class="flex flex-wrap items-center gap-2 mb-3">
+                <button @click="baixarModeloPalpitesCSV" class="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs">📥 Modelo CSV</button>
+                <button @click="exportarPalpitesCSV" class="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs">📤 Exportar CSV</button>
+                <label class="cursor-pointer px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs">
+                  📂 Importar CSV
+                  <input type="file" accept=".csv,text/csv" @change="importarPalpitesCSV" class="hidden" />
+                </label>
+              </div>
+              <p v-if="palpitesCsvMessage" class="text-green-400 text-sm mb-3">{{ palpitesCsvMessage }}</p>
+              <p v-if="palpitesCsvError" class="text-red-400 text-sm mb-3">{{ palpitesCsvError }}</p>
 
               <div class="flex flex-col gap-2">
                 <div v-for="pred in activeMatchPredictions" :key="pred.participant"

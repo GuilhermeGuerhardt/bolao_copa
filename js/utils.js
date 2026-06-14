@@ -32,12 +32,81 @@ export function exportarBackup(data) {
   const blob = new Blob([JSON.stringify(data, null, 2)], {
     type: 'application/json;charset=utf-8'
   });
+  downloadBlob(blob, 'backup-bolao-copa.json');
+}
+
+function downloadBlob(blob, filename) {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = 'backup-bolao-copa.json';
+  link.download = filename;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
+}
+
+function csvField(value) {
+  const str = value === null || value === undefined ? '' : String(value);
+  if (/[";\r\n]/.test(str)) {
+    return '"' + str.replace(/"/g, '""') + '"';
+  }
+  return str;
+}
+
+export function downloadCSV(filename, rows) {
+  const csv = rows.map(row => row.map(csvField).join(';')).join('\r\n');
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+  downloadBlob(blob, filename);
+}
+
+export function parseCSV(text) {
+  const content = text.replace(/^﻿/, '');
+  const delimiter = (content.split('\n')[0] || '').split(';').length >= (content.split('\n')[0] || '').split(',').length ? ';' : ',';
+
+  const rows = [];
+  let row = [];
+  let field = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < content.length; i++) {
+    const char = content[i];
+
+    if (inQuotes) {
+      if (char === '"') {
+        if (content[i + 1] === '"') {
+          field += '"';
+          i++;
+        } else {
+          inQuotes = false;
+        }
+      } else {
+        field += char;
+      }
+      continue;
+    }
+
+    if (char === '"') {
+      inQuotes = true;
+    } else if (char === delimiter) {
+      row.push(field);
+      field = '';
+    } else if (char === '\r') {
+      // ignora, \n trata a quebra de linha
+    } else if (char === '\n') {
+      row.push(field);
+      rows.push(row);
+      row = [];
+      field = '';
+    } else {
+      field += char;
+    }
+  }
+
+  if (field !== '' || row.length > 0) {
+    row.push(field);
+    rows.push(row);
+  }
+
+  return rows.filter(r => r.some(cell => cell.trim() !== ''));
 }
