@@ -2,7 +2,7 @@ import { createApp } from 'vue';
 import { normalizeState } from './storage.js';
 import { calculateRanking } from './scoring.js';
 import { exportarBackup as downloadBackup, resizeImageToBase64, downloadCSV, parseCSV } from './utils.js';
-import { buildAllMatches, ALL_TEAMS, MATCH_DATES, TEAM_FLAGS } from './config.js';
+import { buildAllMatches, ALL_TEAMS, MATCH_DATES, TEAM_FLAGS, KNOCKOUT_PROGRESSION, getMatchWinner, getMatchLoser } from './config.js';
 
 const API = '/api';
 const TOKEN_KEY = 'bolao_token';
@@ -25,7 +25,8 @@ createApp({
       matches: [],
       predictions: [],
       selectedMatchId: null,
-      settings: { actualChampion: null, actualTopScorer: null, championBonusPoints: 0, topScorerBonusPoints: 0 },
+      settings: { actualChampion: null, actualTopScorer: null, championBonusPoints: 0, topScorerBonusPoints: 0, qualifiedTeams: [] },
+      novoTimeClassificado: '',
 
       pollTimer: null,
       eventSource: null,
@@ -135,6 +136,32 @@ createApp({
     jogoCarouselAtual() {
       if (!this.proximosJogos.length) return null;
       return this.proximosJogos[this.carouselIndex % this.proximosJogos.length];
+    },
+
+    faseGruposCompleta() {
+      const grupos = this.allMatches.filter(m => m.group.startsWith('Grupo'));
+      return grupos.length > 0 && grupos.every(g => {
+        const m = this.matches.find(x => x.id === g.id);
+        return m && m.isFinished;
+      });
+    },
+
+    timesDisponiveisClassificados() {
+      return this.ALL_TEAMS.filter(t => !this.settings.qualifiedTeams.includes(t));
+    },
+
+    chaveamentoPorFase() {
+      const fases = {};
+      this.allMatches
+        .filter(m => m.teamA === null && m.teamB === null)
+        .forEach(catalogMatch => {
+          const m = this.matches.find(x => x.id === catalogMatch.id) || {
+            id: catalogMatch.id, group: catalogMatch.group, teamA: null, teamB: null,
+            realScoreA: null, realScoreB: null, isFinished: false, isLive: false, penaltyWinner: null
+          };
+          (fases[catalogMatch.group] ??= []).push(m);
+        });
+      return fases;
     }
   },
 
@@ -260,6 +287,7 @@ createApp({
     },
 
     saveAdminState() {
+      this.propagarChaveamento();
       if (this.saveTimer) clearTimeout(this.saveTimer);
       this.saveTimer = setTimeout(() => {
         this.saveTimer = null;
@@ -319,6 +347,73 @@ createApp({
 
     bandeira(team) {
       return TEAM_FLAGS[team] || '';
+    },
+
+    nomeTime(team) {
+      return team ? `${this.bandeira(team)} ${team}`.trim() : 'A definir';
+    },
+
+    adicionarTimeClassificado() {
+      if (!this.novoTimeClassificado) return;
+      if (!this.settings.qualifiedTeams.includes(this.novoTimeClassificado)) {
+        this.settings.qualifiedTeams.push(this.novoTimeClassificado);
+        this.salvarTimesClassificados();
+      }
+      this.novoTimeClassificado = '';
+    },
+
+    removerTimeClassificado(team) {
+      this.settings.qualifiedTeams = this.settings.qualifiedTeams.filter(t => t !== team);
+      this.salvarTimesClassificados();
+    },
+
+    async salvarTimesClassificados() {
+      try {
+        await fetch(`${API}/settings/special`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', ...this.authHeaders() },
+          body: JSON.stringify(this.settings)
+        });
+      } catch {
+        // ignora falha pontual de rede
+      }
+    },
+
+    prepararMataMata() {
+      let changed = false;
+      this.allMatches.filter(m => m.teamA === null && m.teamB === null).forEach(catalogMatch => {
+        if (!this.matches.find(m => m.id === catalogMatch.id)) {
+          this.matches.push({
+            id: catalogMatch.id, group: catalogMatch.group, teamA: null, teamB: null,
+            realScoreA: null, realScoreB: null, isFinished: false, isLive: false,
+            finishedAt: null, matchDate: null, matchTime: null, penaltyWinner: null
+          });
+          changed = true;
+        }
+      });
+      if (changed) this.saveAdminState();
+    },
+
+    definirTimeChave(match, slot, team) {
+      match[slot] = team || null;
+      this.saveAdminState();
+    },
+
+    definirVencedorPenaltis(match, team) {
+      match.penaltyWinner = team;
+      this.saveAdminState();
+    },
+
+    propagarChaveamento() {
+      for (const [targetId, sources] of Object.entries(KNOCKOUT_PROGRESSION)) {
+        const target = this.matches.find(m => m.id === Number(targetId));
+        if (!target) continue;
+        sources.forEach((src, idx) => {
+          const source = this.matches.find(m => m.id === src.from);
+          const team = source ? (src.result === 'winner' ? getMatchWinner(source) : getMatchLoser(source)) : null;
+          target[idx === 0 ? 'teamA' : 'teamB'] = team;
+        });
+      }
     },
 
     formatarData(value) {

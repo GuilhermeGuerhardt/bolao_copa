@@ -98,17 +98,69 @@ export function buildAllMatches() {
     [tunisiaSuecia.teamA, tunisiaSuecia.teamB] = [tunisiaSuecia.teamB, tunisiaSuecia.teamA];
   }
 
+  const knockoutStages = [
+    { label: 'Oitavas de Final', count: 8 },
+    { label: 'Quartas de Final', count: 4 },
+    { label: 'Semifinal', count: 2 },
+    { label: 'Disputa de 3º Lugar', count: 1 },
+    { label: 'Final', count: 1 }
+  ];
+  knockoutStages.forEach(stage => {
+    for (let i = 0; i < stage.count; i++) {
+      allMatches.push({
+        id: matchId++,
+        group: stage.label,
+        teamA: null,
+        teamB: null,
+        realScoreA: null,
+        realScoreB: null,
+        isFinished: false,
+        isLive: false
+      });
+    }
+  });
+
   return allMatches;
+}
+
+export const KNOCKOUT_PROGRESSION = {
+  81: [{ from: 73, result: 'winner' }, { from: 74, result: 'winner' }],
+  82: [{ from: 75, result: 'winner' }, { from: 76, result: 'winner' }],
+  83: [{ from: 77, result: 'winner' }, { from: 78, result: 'winner' }],
+  84: [{ from: 79, result: 'winner' }, { from: 80, result: 'winner' }],
+  85: [{ from: 81, result: 'winner' }, { from: 82, result: 'winner' }],
+  86: [{ from: 83, result: 'winner' }, { from: 84, result: 'winner' }],
+  87: [{ from: 85, result: 'loser' }, { from: 86, result: 'loser' }],
+  88: [{ from: 85, result: 'winner' }, { from: 86, result: 'winner' }]
+};
+
+export function getMatchWinner(match) {
+  if (!match || !match.teamA || !match.teamB || !match.isFinished) return null;
+  if (match.realScoreA === null || match.realScoreB === null) return null;
+  if (match.realScoreA > match.realScoreB) return match.teamA;
+  if (match.realScoreB > match.realScoreA) return match.teamB;
+  if (match.penaltyWinner === 'A') return match.teamA;
+  if (match.penaltyWinner === 'B') return match.teamB;
+  return null;
+}
+
+export function getMatchLoser(match) {
+  const winner = getMatchWinner(match);
+  if (!winner) return null;
+  return winner === match.teamA ? match.teamB : match.teamA;
 }
 
 const WEEKDAYS_PT = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
 
 export function buildMatchDates() {
   const dates = [];
-  for (let day = 11; day <= 27; day++) {
-    const date = new Date(2026, 5, day);
-    const dia = String(day).padStart(2, '0');
-    dates.push({ value: `2026-06-${dia}`, label: `${dia}/06 - ${WEEKDAYS_PT[date.getDay()]}` });
+  const cursor = new Date(2026, 5, 11);
+  const end = new Date(2026, 6, 19);
+  while (cursor <= end) {
+    const dia = String(cursor.getDate()).padStart(2, '0');
+    const mes = String(cursor.getMonth() + 1).padStart(2, '0');
+    dates.push({ value: `2026-${mes}-${dia}`, label: `${dia}/${mes} - ${WEEKDAYS_PT[cursor.getDay()]}` });
+    cursor.setDate(cursor.getDate() + 1);
   }
   return dates;
 }

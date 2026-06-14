@@ -81,6 +81,7 @@
         <button @click="view = 'transmissao'" class="px-4 py-2 rounded-2xl font-black text-sm transition" :class="view === 'transmissao' ? 'bg-yellow-500 text-black' : 'glass text-white/80 hover:text-white'">📺 Transmissão</button>
         <button v-if="user" @click="abrirPerfil()" class="px-4 py-2 rounded-2xl font-black text-sm transition" :class="view === 'perfil' ? 'bg-yellow-500 text-black' : 'glass text-white/80 hover:text-white'">👤 Perfil</button>
         <button v-if="user && user.isAdmin" @click="view = 'admin'; carregarParticipantesAdmin()" class="px-4 py-2 rounded-2xl font-black text-sm transition" :class="view === 'admin' ? 'bg-yellow-500 text-black' : 'glass text-white/80 hover:text-white'">⚙️ Admin</button>
+        <button v-if="(user && user.isAdmin) || faseGruposCompleta" @click="view = 'matamata'; if (user && user.isAdmin) prepararMataMata()" class="px-4 py-2 rounded-2xl font-black text-sm transition" :class="view === 'matamata' ? 'bg-yellow-500 text-black' : 'glass text-white/80 hover:text-white'">🏆 Mata-mata</button>
       </nav>
 
       <!-- Painel principal -->
@@ -172,7 +173,7 @@
             </div>
 
             <div class="admin-scroll pr-2 space-y-2">
-              <div v-for="m in allMatches" :key="m.id" class="rounded-2xl border border-white/6 bg-white/5 px-3 py-3 flex items-center justify-between gap-3 hover:bg-white/10 transition">
+              <div v-for="m in allMatches.filter(x => x.teamA !== null)" :key="m.id" class="rounded-2xl border border-white/6 bg-white/5 px-3 py-3 flex items-center justify-between gap-3 hover:bg-white/10 transition">
                 <div class="min-w-0">
                   <p class="text-[11px] uppercase tracking-[0.2em] text-gray-400 mb-1">{{ m.group }}</p>
                   <p class="font-bold truncate">{{ bandeira(m.teamA) }} {{ m.teamA }} <span class="text-yellow-400">x</span> {{ bandeira(m.teamB) }} {{ m.teamB }}</p>
@@ -205,14 +206,14 @@
 
             <select v-model.number="selectedMatchId" @change="saveAdminState" class="w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 text-white font-bold mb-5 outline-none focus:border-yellow-400/70">
               <option :value="null">Selecione um jogo...</option>
-              <option v-for="m in matches" :key="m.id" :value="m.id">{{ m.group }} - {{ bandeira(m.teamA) }} {{ m.teamA }} x {{ bandeira(m.teamB) }} {{ m.teamB }}</option>
+              <option v-for="m in matches" :key="m.id" :value="m.id">{{ m.group }} - {{ nomeTime(m.teamA) }} x {{ nomeTime(m.teamB) }}</option>
             </select>
 
             <div v-if="activeMatch" class="rounded-[24px] bg-black/35 border border-white/8 p-4 md:p-5">
               <div class="flex items-center justify-between gap-4 flex-wrap mb-5">
                 <div>
                   <p class="text-xs uppercase tracking-[0.25em] text-yellow-300">Jogo selecionado</p>
-                  <h4 class="text-xl md:text-2xl">{{ bandeira(activeMatch.teamA) }} {{ activeMatch.teamA }} <span class="text-yellow-400">x</span> {{ bandeira(activeMatch.teamB) }} {{ activeMatch.teamB }}</h4>
+                  <h4 class="text-xl md:text-2xl">{{ nomeTime(activeMatch.teamA) }} <span class="text-yellow-400">x</span> {{ nomeTime(activeMatch.teamB) }}</h4>
                   <p class="text-sm subtle-text mt-1">{{ activeMatch.group }}</p>
                 </div>
                 <div class="flex flex-wrap gap-2">
@@ -361,6 +362,75 @@
             </div>
           </section>
         </div>
+      </main>
+
+      <!-- Mata-mata -->
+      <main v-else-if="view === 'matamata' && ((user && user.isAdmin) || faseGruposCompleta)" class="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-10 grid gap-6">
+
+        <div v-if="user && user.isAdmin && !faseGruposCompleta" class="glass rounded-2xl px-4 py-3 text-sm text-yellow-200">
+          🔒 Esta aba ainda está bloqueada para os participantes — libera quando todos os jogos da fase de grupos forem encerrados.
+        </div>
+
+        <!-- Times classificados (admin) -->
+        <section v-if="user && user.isAdmin" class="glass card-glow rounded-[28px] p-5 md:p-7">
+          <h3 class="text-lg md:text-xl mb-1">🏆 Times Classificados</h3>
+          <p class="text-sm subtle-text mb-4">Times que avançaram da fase de grupos — ficam disponíveis para montar as Oitavas de Final.</p>
+          <div class="flex flex-wrap gap-2 mb-4">
+            <span v-for="t in settings.qualifiedTeams" :key="t" class="chip px-3 py-2 text-sm font-bold flex items-center gap-2">
+              {{ bandeira(t) }} {{ t }}
+              <button @click="removerTimeClassificado(t)" class="text-red-400 hover:text-red-300">✕</button>
+            </span>
+            <p v-if="!settings.qualifiedTeams.length" class="text-sm subtle-text">Nenhum time adicionado ainda.</p>
+          </div>
+          <div class="flex gap-2">
+            <select v-model="novoTimeClassificado" class="flex-1 rounded-2xl bg-black/40 border border-white/10 px-4 py-3 text-white font-bold outline-none focus:border-yellow-400/70">
+              <option value="">Selecione um time...</option>
+              <option v-for="t in timesDisponiveisClassificados" :key="t" :value="t">{{ bandeira(t) }} {{ t }}</option>
+            </select>
+            <button @click="adicionarTimeClassificado()" class="px-4 py-3 rounded-2xl font-black text-sm bg-green-500 text-slate-950 hover:bg-green-400 transition">Adicionar</button>
+          </div>
+        </section>
+
+        <!-- Chave -->
+        <section v-for="(jogos, fase) in chaveamentoPorFase" :key="fase" class="glass card-glow rounded-[28px] p-5 md:p-7">
+          <h3 class="text-lg md:text-xl mb-4">{{ fase }}</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div v-for="m in jogos" :key="m.id" class="rounded-2xl bg-black/35 border border-white/8 p-4">
+              <div class="grid grid-cols-[1fr_auto_1fr] gap-2 items-center">
+                <div class="text-center">
+                  <select v-if="user && user.isAdmin && fase === 'Oitavas de Final'" :value="m.teamA" @change="definirTimeChave(m, 'teamA', $event.target.value)" class="w-full rounded-xl bg-black/40 border border-white/10 px-2 py-2 text-sm font-bold outline-none focus:border-yellow-400/70">
+                    <option value="">A definir</option>
+                    <option v-for="t in settings.qualifiedTeams" :key="t" :value="t">{{ bandeira(t) }} {{ t }}</option>
+                  </select>
+                  <p v-else class="font-bold text-sm">{{ nomeTime(m.teamA) }}</p>
+                </div>
+                <div class="text-yellow-400 font-black text-center text-sm">
+                  <span v-if="m.isFinished">{{ exibirPlacar(m.realScoreA) }} x {{ exibirPlacar(m.realScoreB) }}</span>
+                  <span v-else>x</span>
+                </div>
+                <div class="text-center">
+                  <select v-if="user && user.isAdmin && fase === 'Oitavas de Final'" :value="m.teamB" @change="definirTimeChave(m, 'teamB', $event.target.value)" class="w-full rounded-xl bg-black/40 border border-white/10 px-2 py-2 text-sm font-bold outline-none focus:border-yellow-400/70">
+                    <option value="">A definir</option>
+                    <option v-for="t in settings.qualifiedTeams" :key="t" :value="t">{{ bandeira(t) }} {{ t }}</option>
+                  </select>
+                  <p v-else class="font-bold text-sm">{{ nomeTime(m.teamB) }}</p>
+                </div>
+              </div>
+
+              <div v-if="user && user.isAdmin && m.isFinished && m.teamA && m.teamB && m.realScoreA === m.realScoreB" class="mt-3 pt-3 border-t border-white/10 text-center">
+                <p class="text-[11px] uppercase tracking-[0.2em] text-gray-400 mb-2">Quem avançou nos pênaltis?</p>
+                <div class="flex gap-2 justify-center">
+                  <button @click="definirVencedorPenaltis(m, 'A')" class="chip px-3 py-1 text-xs font-bold transition" :class="m.penaltyWinner==='A' ? 'status-finished' : 'opacity-50 hover:opacity-80'">{{ nomeTime(m.teamA) }}</button>
+                  <button @click="definirVencedorPenaltis(m, 'B')" class="chip px-3 py-1 text-xs font-bold transition" :class="m.penaltyWinner==='B' ? 'status-finished' : 'opacity-50 hover:opacity-80'">{{ nomeTime(m.teamB) }}</button>
+                </div>
+              </div>
+
+              <div v-if="user && user.isAdmin && m.teamA && m.teamB" class="mt-3 text-center">
+                <button @click="selectMatch(m); view = 'admin'" class="text-xs font-bold text-sky-300 hover:text-sky-200 underline">Lançar resultado na Central de Jogos →</button>
+              </div>
+            </div>
+          </div>
+        </section>
       </main>
 
       <!-- Perfil -->

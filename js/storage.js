@@ -13,18 +13,20 @@ export function normalizeState(raw) {
   const matches = Array.isArray(raw?.matches)
     ? raw.matches.filter(match => matchMap.has(match.id)).map(match => {
         const base = matchMap.get(match.id);
+        const isKnockoutSlot = base.teamA === null && base.teamB === null;
         return {
           id: base.id,
           group: base.group,
-          teamA: base.teamA,
-          teamB: base.teamB,
+          teamA: isKnockoutSlot ? (match.teamA ?? null) : base.teamA,
+          teamB: isKnockoutSlot ? (match.teamB ?? null) : base.teamB,
           realScoreA: toNullableNumber(match.realScoreA),
           realScoreB: toNullableNumber(match.realScoreB),
           isFinished: Boolean(match.isFinished),
           isLive: Boolean(match.isLive),
           finishedAt: match.finishedAt ?? null,
           matchDate: match.matchDate ?? null,
-          matchTime: match.matchTime ?? null
+          matchTime: match.matchTime ?? null,
+          penaltyWinner: match.penaltyWinner ?? null
         };
       })
     : [];
@@ -61,7 +63,8 @@ export function normalizeState(raw) {
     actualChampion: raw?.settings?.actualChampion ?? null,
     actualTopScorer: raw?.settings?.actualTopScorer ?? null,
     championBonusPoints: Number(raw?.settings?.championBonusPoints ?? 0),
-    topScorerBonusPoints: Number(raw?.settings?.topScorerBonusPoints ?? 0)
+    topScorerBonusPoints: Number(raw?.settings?.topScorerBonusPoints ?? 0),
+    qualifiedTeams: Array.isArray(raw?.settings?.qualifiedTeams) ? raw.settings.qualifiedTeams : []
   };
 
   return {

@@ -87,11 +87,15 @@ async function initDb() {
     ALTER TABLE bolao_matches ADD COLUMN IF NOT EXISTS "isLive" BOOLEAN NOT NULL DEFAULT FALSE;
     ALTER TABLE bolao_matches ADD COLUMN IF NOT EXISTS "matchDate" TEXT;
     ALTER TABLE bolao_matches ADD COLUMN IF NOT EXISTS "matchTime" TEXT;
+    ALTER TABLE bolao_matches ADD COLUMN IF NOT EXISTS "penaltyWinner" TEXT;
+    ALTER TABLE bolao_matches ALTER COLUMN "teamA" DROP NOT NULL;
+    ALTER TABLE bolao_matches ALTER COLUMN "teamB" DROP NOT NULL;
 
     INSERT INTO bolao_settings (key, value) VALUES ('actualChampion', NULL) ON CONFLICT (key) DO NOTHING;
     INSERT INTO bolao_settings (key, value) VALUES ('actualTopScorer', NULL) ON CONFLICT (key) DO NOTHING;
     INSERT INTO bolao_settings (key, value) VALUES ('championBonusPoints', '10') ON CONFLICT (key) DO NOTHING;
     INSERT INTO bolao_settings (key, value) VALUES ('topScorerBonusPoints', '5') ON CONFLICT (key) DO NOTHING;
+    INSERT INTO bolao_settings (key, value) VALUES ('qualifiedTeams', '[]') ON CONFLICT (key) DO NOTHING;
 
     CREATE TABLE IF NOT EXISTS bolao_participants (
       id              SERIAL PRIMARY KEY,
@@ -305,6 +309,14 @@ app.get("/api/state", async (req, res) => {
         actualTopScorer: settingsMap.actualTopScorer ?? null,
         championBonusPoints: Number(settingsMap.championBonusPoints ?? 0),
         topScorerBonusPoints: Number(settingsMap.topScorerBonusPoints ?? 0),
+        qualifiedTeams: (() => {
+          try {
+            const parsed = JSON.parse(settingsMap.qualifiedTeams ?? "[]");
+            return Array.isArray(parsed) ? parsed : [];
+          } catch {
+            return [];
+          }
+        })(),
       },
     });
   } catch (e) {
@@ -346,20 +358,25 @@ app.put("/api/state", authMiddleware, adminMiddleware, async (req, res) => {
           const isLive = Boolean(m.isLive) && !isFinished;
 
           await client.query(
-            `INSERT INTO bolao_matches (id, "group", "teamA", "teamB", "realScoreA", "realScoreB", "isFinished", "isLive", "finishedAt", "matchDate", "matchTime", "addedAt")
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+            `INSERT INTO bolao_matches (id, "group", "teamA", "teamB", "realScoreA", "realScoreB", "isFinished", "isLive", "finishedAt", "matchDate", "matchTime", "penaltyWinner", "addedAt")
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
              ON CONFLICT (id) DO UPDATE SET
+               "group" = EXCLUDED."group",
+               "teamA" = EXCLUDED."teamA",
+               "teamB" = EXCLUDED."teamB",
                "realScoreA" = EXCLUDED."realScoreA",
                "realScoreB" = EXCLUDED."realScoreB",
                "isFinished" = EXCLUDED."isFinished",
                "isLive" = EXCLUDED."isLive",
                "finishedAt" = EXCLUDED."finishedAt",
                "matchDate" = EXCLUDED."matchDate",
-               "matchTime" = EXCLUDED."matchTime"`,
+               "matchTime" = EXCLUDED."matchTime",
+               "penaltyWinner" = EXCLUDED."penaltyWinner"`,
             [
-              m.id, m.group, m.teamA, m.teamB,
+              m.id, m.group, m.teamA ?? null, m.teamB ?? null,
               m.realScoreA ?? null, m.realScoreB ?? null,
               isFinished, isLive, finishedAt, m.matchDate ?? null, m.matchTime ?? null,
+              m.penaltyWinner ?? null,
               new Date().toISOString(),
             ]
           );
@@ -420,6 +437,7 @@ app.post("/api/admin/restore", authMiddleware, adminMiddleware, async (req, res)
         finishedAt: m?.finishedAt ?? null,
         matchDate: m?.matchDate ?? null,
         matchTime: m?.matchTime ?? null,
+        penaltyWinner: m?.penaltyWinner ?? null,
       }))
       .filter((m) => Number.isInteger(m.id));
 
@@ -437,8 +455,8 @@ app.post("/api/admin/restore", authMiddleware, adminMiddleware, async (req, res)
 
       for (const m of validMatches) {
         await client.query(
-          `INSERT INTO bolao_matches (id, "group", "teamA", "teamB", "realScoreA", "realScoreB", "isFinished", "isLive", "finishedAt", "matchDate", "matchTime", "addedAt")
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+          `INSERT INTO bolao_matches (id, "group", "teamA", "teamB", "realScoreA", "realScoreB", "isFinished", "isLive", "finishedAt", "matchDate", "matchTime", "penaltyWinner", "addedAt")
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
            ON CONFLICT (id) DO UPDATE SET
              "group" = EXCLUDED."group",
              "teamA" = EXCLUDED."teamA",
@@ -449,11 +467,13 @@ app.post("/api/admin/restore", authMiddleware, adminMiddleware, async (req, res)
              "isLive" = EXCLUDED."isLive",
              "finishedAt" = EXCLUDED."finishedAt",
              "matchDate" = EXCLUDED."matchDate",
-             "matchTime" = EXCLUDED."matchTime"`,
+             "matchTime" = EXCLUDED."matchTime",
+             "penaltyWinner" = EXCLUDED."penaltyWinner"`,
           [
             m.id, m.group, m.teamA, m.teamB,
             m.realScoreA, m.realScoreB,
             m.isFinished, m.isLive, m.finishedAt, m.matchDate, m.matchTime,
+            m.penaltyWinner,
             new Date().toISOString(),
           ]
         );
@@ -473,6 +493,7 @@ app.post("/api/admin/restore", authMiddleware, adminMiddleware, async (req, res)
         ["actualTopScorer", settings?.actualTopScorer ? String(settings.actualTopScorer).trim().slice(0, 100) : null],
         ["championBonusPoints", String(Number(settings?.championBonusPoints) || 0)],
         ["topScorerBonusPoints", String(Number(settings?.topScorerBonusPoints) || 0)],
+        ["qualifiedTeams", JSON.stringify(Array.isArray(settings?.qualifiedTeams) ? settings.qualifiedTeams.filter((t) => typeof t === "string").slice(0, 48) : [])],
       ];
       for (const [key, value] of settingsEntries) {
         await client.query(
@@ -747,13 +768,14 @@ app.delete("/api/admin/participants/:id", authMiddleware, adminMiddleware, async
 
 app.put("/api/settings/special", authMiddleware, adminMiddleware, async (req, res) => {
   try {
-    const { actualChampion, actualTopScorer, championBonusPoints, topScorerBonusPoints } = req.body || {};
+    const { actualChampion, actualTopScorer, championBonusPoints, topScorerBonusPoints, qualifiedTeams } = req.body || {};
 
     const entries = [
       ["actualChampion", actualChampion ? String(actualChampion).trim().slice(0, 100) : null],
       ["actualTopScorer", actualTopScorer ? String(actualTopScorer).trim().slice(0, 100) : null],
       ["championBonusPoints", String(Number(championBonusPoints) || 0)],
       ["topScorerBonusPoints", String(Number(topScorerBonusPoints) || 0)],
+      ["qualifiedTeams", JSON.stringify(Array.isArray(qualifiedTeams) ? qualifiedTeams.filter((t) => typeof t === "string").slice(0, 48) : [])],
     ];
 
     for (const [key, value] of entries) {
@@ -1052,6 +1074,7 @@ function normalizeMatch(m) {
     finishedAt: m.finishedAt ?? null,
     matchDate: m.matchDate ?? null,
     matchTime: m.matchTime ?? null,
+    penaltyWinner: m.penaltyWinner ?? null,
   };
 }
 
