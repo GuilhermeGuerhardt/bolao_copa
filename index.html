@@ -708,6 +708,44 @@
             </section>
           </div>
         </section>
+
+        <section class="glass rounded-[28px] p-5 md:p-6 card-glow">
+          <div class="flex items-center justify-between gap-3 mb-4 flex-wrap">
+            <div>
+              <h3 class="text-xl text-yellow-300">🏆 Chave do mata-mata</h3>
+              <p class="text-sm subtle-text">Os confrontos vão sendo preenchidos automaticamente conforme os jogos avançam.</p>
+            </div>
+            <span class="chip px-3 py-1 text-xs font-bold">Atualiza sozinho</span>
+          </div>
+
+          <div v-for="(jogos, fase) in chaveamentoPorFase" :key="fase" class="mb-5 last:mb-0">
+            <p class="text-xs uppercase tracking-[0.25em] text-yellow-300 mb-2">{{ fase }}</p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <div v-for="m in jogos" :key="m.id" class="rounded-2xl border p-3" :class="(!m.teamA && !m.teamB) ? 'border-dashed border-white/10 bg-black/20' : 'border-white/8 bg-black/35'">
+                <div class="grid grid-cols-[1fr_auto_1fr] gap-2 items-center text-center">
+                  <div class="min-w-0">
+                    <template v-if="m.teamA">
+                      <p class="text-lg leading-none">{{ bandeira(m.teamA) }}</p>
+                      <p class="font-bold text-xs mt-1 truncate">{{ m.teamA }}</p>
+                    </template>
+                    <p v-else class="text-xs italic subtle-text">Em breve</p>
+                  </div>
+                  <div class="font-black text-xs" :class="m.teamA && m.teamB ? 'text-yellow-400' : 'subtle-text'">
+                    <span v-if="m.isFinished">{{ exibirPlacar(m.realScoreA) }} x {{ exibirPlacar(m.realScoreB) }}</span>
+                    <span v-else>x</span>
+                  </div>
+                  <div class="min-w-0">
+                    <template v-if="m.teamB">
+                      <p class="text-lg leading-none">{{ bandeira(m.teamB) }}</p>
+                      <p class="font-bold text-xs mt-1 truncate">{{ m.teamB }}</p>
+                    </template>
+                    <p v-else class="text-xs italic subtle-text">Em breve</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
       </main>
 
       <footer class="max-w-7xl mx-auto px-4 md:px-6 py-6 text-center">
