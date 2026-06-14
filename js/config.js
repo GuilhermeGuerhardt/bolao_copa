@@ -93,6 +93,11 @@ export function buildAllMatches() {
     [suicaCatar.teamA, suicaCatar.teamB] = [suicaCatar.teamB, suicaCatar.teamA];
   }
 
+  const tunisiaSuecia = allMatches.find(m => m.teamA === 'Tunísia' && m.teamB === 'Suécia');
+  if (tunisiaSuecia) {
+    [tunisiaSuecia.teamA, tunisiaSuecia.teamB] = [tunisiaSuecia.teamB, tunisiaSuecia.teamA];
+  }
+
   return allMatches;
 }
 
