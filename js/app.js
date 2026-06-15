@@ -162,6 +162,26 @@ createApp({
           (fases[catalogMatch.group] ??= []).push(m);
         });
       return fases;
+    },
+
+    bracketSides() {
+      const oitavas = this.chaveamentoPorFase['Oitavas de Final'];
+      const quartas = this.chaveamentoPorFase['Quartas de Final'];
+      const semi = this.chaveamentoPorFase['Semifinal'];
+      return {
+        left: {
+          oitavas: [[oitavas[0], oitavas[1]], [oitavas[2], oitavas[3]]],
+          quartas: [[quartas[0], quartas[1]]],
+          semi: semi[0]
+        },
+        right: {
+          oitavas: [[oitavas[4], oitavas[5]], [oitavas[6], oitavas[7]]],
+          quartas: [[quartas[2], quartas[3]]],
+          semi: semi[1]
+        },
+        final: this.chaveamentoPorFase['Final'][0],
+        third: this.chaveamentoPorFase['Disputa de 3º Lugar'][0]
+      };
     }
   },
 
@@ -353,9 +373,9 @@ createApp({
       return team ? `${this.bandeira(team)} ${team}`.trim() : 'A definir';
     },
 
-    bracketTeamClass(match, side) {
-      if (!match || !match[side]) return 'is-pending';
-      if (match.isFinished && getMatchLoser(match) === match[side]) return 'is-eliminated';
+    bracketRowClass(match, side) {
+      if (!match || !match[side]) return 'tbd';
+      if (match.isFinished) return getMatchWinner(match) === match[side] ? 'win' : 'lose';
       return '';
     },
 

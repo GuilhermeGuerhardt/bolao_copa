@@ -718,36 +718,110 @@
             <span class="chip px-3 py-1 text-xs font-bold">Atualiza sozinho</span>
           </div>
 
-          <div class="overflow-x-auto pb-2">
-            <div class="flex items-stretch gap-4 md:gap-8" style="min-width: 760px;">
-              <div v-for="faseKey in ['Oitavas de Final', 'Quartas de Final', 'Semifinal']" :key="faseKey" class="bracket-round">
-                <div v-for="m in chaveamentoPorFase[faseKey]" :key="m.id" class="bracket-pair">
-                  <div v-for="side in ['teamA', 'teamB']" :key="side" class="bracket-team" :class="bracketTeamClass(m, side)">
-                    <span v-if="m[side]">{{ bandeira(m[side]) }} {{ m[side] }}</span>
+          <div class="bracket-wrap">
+            <div class="bracket-tree">
+              <div class="bracket-col">
+                <div v-for="(par, idx) in bracketSides.left.oitavas" :key="'eo'+idx" class="bracket-link l">
+                  <div v-for="m in par" :key="m.id" class="bracket-match">
+                    <div v-for="side in ['teamA', 'teamB']" :key="side" class="bracket-row" :class="bracketRowClass(m, side)">
+                      <template v-if="m[side]">
+                        <span>{{ bandeira(m[side]) }} {{ m[side] }}</span>
+                        <span v-if="m.isFinished" class="bracket-score">{{ exibirPlacar(m['realScore' + side.slice(-1)]) }}</span>
+                      </template>
+                      <span v-else>⏳ Em breve</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="bracket-col">
+                <div v-for="(par, idx) in bracketSides.left.quartas" :key="'eq'+idx" class="bracket-link l full">
+                  <div v-for="m in par" :key="m.id" class="bracket-match">
+                    <div v-for="side in ['teamA', 'teamB']" :key="side" class="bracket-row" :class="bracketRowClass(m, side)">
+                      <template v-if="m[side]">
+                        <span>{{ bandeira(m[side]) }} {{ m[side] }}</span>
+                        <span v-if="m.isFinished" class="bracket-score">{{ exibirPlacar(m['realScore' + side.slice(-1)]) }}</span>
+                      </template>
+                      <span v-else>⏳ Em breve</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="bracket-col semi">
+                <div class="bracket-match stub-l">
+                  <div v-for="side in ['teamA', 'teamB']" :key="side" class="bracket-row" :class="bracketRowClass(bracketSides.left.semi, side)">
+                    <template v-if="bracketSides.left.semi[side]">
+                      <span>{{ bandeira(bracketSides.left.semi[side]) }} {{ bracketSides.left.semi[side] }}</span>
+                      <span v-if="bracketSides.left.semi.isFinished" class="bracket-score">{{ exibirPlacar(bracketSides.left.semi['realScore' + side.slice(-1)]) }}</span>
+                    </template>
                     <span v-else>⏳ Em breve</span>
                   </div>
                 </div>
               </div>
 
-              <div class="bracket-final">
-                <p class="text-3xl mb-1">🏆</p>
-                <div class="rounded-xl border border-yellow-400/40 bg-yellow-400/5 px-3 py-2 text-center">
-                  <p class="text-[10px] uppercase tracking-[0.25em] text-yellow-300 mb-1">Final</p>
-                  <div v-for="side in ['teamA', 'teamB']" :key="side" class="bracket-team" :class="bracketTeamClass(chaveamentoPorFase['Final'][0], side)">
-                    <span v-if="chaveamentoPorFase['Final'][0][side]">{{ bandeira(chaveamentoPorFase['Final'][0][side]) }} {{ chaveamentoPorFase['Final'][0][side] }}</span>
+              <div class="bracket-center">
+                <div class="bracket-trophy">🏆</div>
+                <div class="bracket-final">
+                  <p class="text-[10px] uppercase tracking-[0.3em] text-yellow-300 font-bold mb-1.5">Final</p>
+                  <div v-for="side in ['teamA', 'teamB']" :key="side" class="bracket-row" :class="bracketRowClass(bracketSides.final, side)">
+                    <template v-if="bracketSides.final[side]">
+                      <span>{{ bandeira(bracketSides.final[side]) }} {{ bracketSides.final[side] }}</span>
+                      <span v-if="bracketSides.final.isFinished" class="bracket-score">{{ exibirPlacar(bracketSides.final['realScore' + side.slice(-1)]) }}</span>
+                    </template>
+                    <span v-else>⏳ Em breve</span>
+                  </div>
+                </div>
+                <div class="bracket-third">
+                  <p class="text-[9px] uppercase tracking-[0.2em] text-yellow-300 font-bold mb-1 text-center">🥉 3º Lugar</p>
+                  <div v-for="side in ['teamA', 'teamB']" :key="side" class="bracket-row" :class="bracketRowClass(bracketSides.third, side)">
+                    <template v-if="bracketSides.third[side]">
+                      <span>{{ bandeira(bracketSides.third[side]) }} {{ bracketSides.third[side] }}</span>
+                      <span v-if="bracketSides.third.isFinished" class="bracket-score">{{ exibirPlacar(bracketSides.third['realScore' + side.slice(-1)]) }}</span>
+                    </template>
                     <span v-else>⏳ Em breve</span>
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
 
-          <div class="mt-5 pt-4 border-t border-white/8">
-            <p class="text-xs uppercase tracking-[0.25em] text-yellow-300 mb-2">🥉 Disputa de 3º Lugar</p>
-            <div class="inline-flex flex-col gap-1.5 rounded-xl border border-dashed border-white/15 bg-black/20 px-4 py-2.5">
-              <div v-for="side in ['teamA', 'teamB']" :key="side" class="bracket-team" :class="bracketTeamClass(chaveamentoPorFase['Disputa de 3º Lugar'][0], side)">
-                <span v-if="chaveamentoPorFase['Disputa de 3º Lugar'][0][side]">{{ bandeira(chaveamentoPorFase['Disputa de 3º Lugar'][0][side]) }} {{ chaveamentoPorFase['Disputa de 3º Lugar'][0][side] }}</span>
-                <span v-else>⏳ Em breve</span>
+              <div class="bracket-col semi">
+                <div class="bracket-match stub-r">
+                  <div v-for="side in ['teamA', 'teamB']" :key="side" class="bracket-row" :class="bracketRowClass(bracketSides.right.semi, side)">
+                    <template v-if="bracketSides.right.semi[side]">
+                      <span>{{ bandeira(bracketSides.right.semi[side]) }} {{ bracketSides.right.semi[side] }}</span>
+                      <span v-if="bracketSides.right.semi.isFinished" class="bracket-score">{{ exibirPlacar(bracketSides.right.semi['realScore' + side.slice(-1)]) }}</span>
+                    </template>
+                    <span v-else>⏳ Em breve</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="bracket-col">
+                <div v-for="(par, idx) in bracketSides.right.quartas" :key="'dq'+idx" class="bracket-link r full">
+                  <div v-for="m in par" :key="m.id" class="bracket-match">
+                    <div v-for="side in ['teamA', 'teamB']" :key="side" class="bracket-row" :class="bracketRowClass(m, side)">
+                      <template v-if="m[side]">
+                        <span>{{ bandeira(m[side]) }} {{ m[side] }}</span>
+                        <span v-if="m.isFinished" class="bracket-score">{{ exibirPlacar(m['realScore' + side.slice(-1)]) }}</span>
+                      </template>
+                      <span v-else>⏳ Em breve</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="bracket-col">
+                <div v-for="(par, idx) in bracketSides.right.oitavas" :key="'do'+idx" class="bracket-link r">
+                  <div v-for="m in par" :key="m.id" class="bracket-match">
+                    <div v-for="side in ['teamA', 'teamB']" :key="side" class="bracket-row" :class="bracketRowClass(m, side)">
+                      <template v-if="m[side]">
+                        <span>{{ bandeira(m[side]) }} {{ m[side] }}</span>
+                        <span v-if="m.isFinished" class="bracket-score">{{ exibirPlacar(m['realScore' + side.slice(-1)]) }}</span>
+                      </template>
+                      <span v-else>⏳ Em breve</span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
