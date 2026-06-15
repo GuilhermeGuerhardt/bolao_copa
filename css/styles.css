@@ -89,10 +89,19 @@ h1, h2, h3, h4, h5 {
 }
 
 .flag-ico {
-  border-radius: 3px;
+  display: inline-block;
+  width: 1.15em;
+  height: 1.15em;
+  border-radius: 50%;
+  background-size: cover;
+  background-position: center;
   overflow: hidden;
   box-shadow: 0 0 0 1px rgba(255,255,255,.12);
-  vertical-align: -0.15em;
+  vertical-align: -0.25em;
+}
+
+.flag-ico::before {
+  content: none;
 }
 
 .score-box {
