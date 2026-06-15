@@ -88,6 +88,13 @@ h1, h2, h3, h4, h5 {
   border: 1px solid rgba(255,255,255,.07);
 }
 
+.flag-ico {
+  border-radius: 3px;
+  overflow: hidden;
+  box-shadow: 0 0 0 1px rgba(255,255,255,.12);
+  vertical-align: -0.15em;
+}
+
 .score-box {
   min-width: 52px;
   min-height: 52px;

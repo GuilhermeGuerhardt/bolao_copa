@@ -9,6 +9,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script type="importmap">{ "imports": { "vue": "https://unpkg.com/vue@3/dist/vue.esm-browser.prod.js" } }</script>
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flag-icons@7.2.3/css/flag-icons.min.css" />
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
@@ -129,7 +130,7 @@
                   <div class="flex-1 min-w-0">
                     <div class="team-pill rounded-2xl px-2 md:px-3 py-3 md:py-4 flex flex-col items-center">
                       <p class="text-[11px] uppercase text-green-300 mb-1">Casa</p>
-                      <span class="text-xl md:text-2xl leading-none mb-1">{{ bandeira(activeMatch.teamA) }}</span>
+                      <span class="fi flag-ico text-xl md:text-2xl mb-1" :class="'fi-' + bandeiraCode(activeMatch.teamA)"></span>
                       <p class="font-black text-sm md:text-xl break-words text-center">{{ activeMatch.teamA }}</p>
                     </div>
                   </div>
@@ -141,7 +142,7 @@
                   <div class="flex-1 min-w-0">
                     <div class="team-pill rounded-2xl px-2 md:px-3 py-3 md:py-4 flex flex-col items-center">
                       <p class="text-[11px] uppercase text-sky-300 mb-1">Visitante</p>
-                      <span class="text-xl md:text-2xl leading-none mb-1">{{ bandeira(activeMatch.teamB) }}</span>
+                      <span class="fi flag-ico text-xl md:text-2xl mb-1" :class="'fi-' + bandeiraCode(activeMatch.teamB)"></span>
                       <p class="font-black text-sm md:text-xl break-words text-center">{{ activeMatch.teamB }}</p>
                     </div>
                   </div>
@@ -176,7 +177,7 @@
               <div v-for="m in allMatches.filter(x => x.teamA !== null)" :key="m.id" class="rounded-2xl border border-white/6 bg-white/5 px-3 py-3 flex items-center justify-between gap-3 hover:bg-white/10 transition">
                 <div class="min-w-0">
                   <p class="text-[11px] uppercase tracking-[0.2em] text-gray-400 mb-1">{{ m.group }}</p>
-                  <p class="font-bold truncate">{{ bandeira(m.teamA) }} {{ m.teamA }} <span class="text-yellow-400">x</span> {{ bandeira(m.teamB) }} {{ m.teamB }}</p>
+                  <p class="font-bold truncate"><span class="fi flag-ico" :class="'fi-' + bandeiraCode(m.teamA)"></span> {{ m.teamA }} <span class="text-yellow-400">x</span> <span class="fi flag-ico" :class="'fi-' + bandeiraCode(m.teamB)"></span> {{ m.teamB }}</p>
                 </div>
                 <button @click="selectMatch(m)" class="shrink-0 px-4 py-2 rounded-xl font-black text-sm transition" :class="matches.some(x => x.id === m.id) ? 'bg-sky-500 text-slate-950 hover:bg-sky-400' : 'bg-green-500 text-slate-950 hover:bg-green-400'">
                   {{ matches.some(x => x.id === m.id) ? 'Editar' : '+ Adicionar' }}
@@ -225,12 +226,12 @@
 
               <div class="grid grid-cols-[1fr_auto_1fr] gap-3 items-center mb-2">
                 <div class="rounded-2xl bg-green-500/10 border border-green-400/15 p-4 text-center">
-                  <p class="text-xs uppercase tracking-[0.2em] text-green-300 mb-2">{{ bandeira(activeMatch.teamA) }} {{ activeMatch.teamA }}</p>
+                  <p class="text-xs uppercase tracking-[0.2em] text-green-300 mb-2"><span class="fi flag-ico" :class="'fi-' + bandeiraCode(activeMatch.teamA)"></span> {{ activeMatch.teamA }}</p>
                   <input type="number" min="0" max="20" :value="activeMatch.realScoreA" @input="atualizarPlacarReal(activeMatch, 'realScoreA', $event.target.value)" @change="saveAdminState" class="score-input mx-auto" />
                 </div>
                 <div class="text-yellow-400 font-black text-2xl md:text-4xl">X</div>
                 <div class="rounded-2xl bg-sky-500/10 border border-sky-400/15 p-4 text-center">
-                  <p class="text-xs uppercase tracking-[0.2em] text-sky-300 mb-2">{{ bandeira(activeMatch.teamB) }} {{ activeMatch.teamB }}</p>
+                  <p class="text-xs uppercase tracking-[0.2em] text-sky-300 mb-2"><span class="fi flag-ico" :class="'fi-' + bandeiraCode(activeMatch.teamB)"></span> {{ activeMatch.teamB }}</p>
                   <input type="number" min="0" max="20" :value="activeMatch.realScoreB" @input="atualizarPlacarReal(activeMatch, 'realScoreB', $event.target.value)" @change="saveAdminState" class="score-input mx-auto" />
                 </div>
               </div>
@@ -377,7 +378,7 @@
           <p class="text-sm subtle-text mb-4">Times que avançaram da fase de grupos — ficam disponíveis para montar as Oitavas de Final.</p>
           <div class="flex flex-wrap gap-2 mb-4">
             <span v-for="t in settings.qualifiedTeams" :key="t" class="chip px-3 py-2 text-sm font-bold flex items-center gap-2">
-              {{ bandeira(t) }} {{ t }}
+              <span class="fi flag-ico" :class="'fi-' + bandeiraCode(t)"></span> {{ t }}
               <button @click="removerTimeClassificado(t)" class="text-red-400 hover:text-red-300">✕</button>
             </span>
             <p v-if="!settings.qualifiedTeams.length" class="text-sm subtle-text">Nenhum time adicionado ainda.</p>
@@ -504,16 +505,16 @@
             <div class="flex-1 rounded-[24px] bg-black/35 border border-white/8 p-4 md:p-6 text-center" :class="{ 'jogo-brasil': jogoCarouselAtual.teamA === 'Brasil' || jogoCarouselAtual.teamB === 'Brasil' }">
               <div class="flex items-center justify-center gap-2 mb-3 flex-wrap">
                 <p class="text-xs uppercase tracking-[0.25em] text-yellow-300">{{ jogoCarouselAtual.group }}</p>
-                <span v-if="jogoCarouselAtual.teamA === 'Brasil' || jogoCarouselAtual.teamB === 'Brasil'" class="brasil-badge">🇧🇷 Jogo do Brasil</span>
+                <span v-if="jogoCarouselAtual.teamA === 'Brasil' || jogoCarouselAtual.teamB === 'Brasil'" class="brasil-badge"><span class="fi fi-br flag-ico"></span> Jogo do Brasil</span>
               </div>
               <div class="flex items-center justify-center gap-3 md:gap-6">
                 <div class="flex flex-col items-center gap-1 min-w-0">
-                  <span class="text-2xl md:text-3xl leading-none">{{ bandeira(jogoCarouselAtual.teamA) }}</span>
+                  <span class="fi flag-ico text-2xl md:text-3xl" :class="'fi-' + bandeiraCode(jogoCarouselAtual.teamA)"></span>
                   <p class="font-black text-sm md:text-lg truncate">{{ jogoCarouselAtual.teamA }}</p>
                 </div>
                 <span class="text-yellow-400 font-black text-lg md:text-2xl">x</span>
                 <div class="flex flex-col items-center gap-1 min-w-0">
-                  <span class="text-2xl md:text-3xl leading-none">{{ bandeira(jogoCarouselAtual.teamB) }}</span>
+                  <span class="fi flag-ico text-2xl md:text-3xl" :class="'fi-' + bandeiraCode(jogoCarouselAtual.teamB)"></span>
                   <p class="font-black text-sm md:text-lg truncate">{{ jogoCarouselAtual.teamB }}</p>
                 </div>
               </div>
@@ -551,7 +552,7 @@
               <div class="flex items-center justify-between gap-3 flex-wrap mb-5">
                 <div>
                   <p class="text-xs uppercase tracking-[0.25em] text-yellow-300">Jogo em exibição</p>
-                  <h4 class="text-2xl md:text-3xl">{{ bandeira(activeMatch.teamA) }} {{ activeMatch.teamA }} <span class="text-yellow-400">x</span> {{ bandeira(activeMatch.teamB) }} {{ activeMatch.teamB }}</h4>
+                  <h4 class="text-2xl md:text-3xl"><span class="fi flag-ico" :class="'fi-' + bandeiraCode(activeMatch.teamA)"></span> {{ activeMatch.teamA }} <span class="text-yellow-400">x</span> <span class="fi flag-ico" :class="'fi-' + bandeiraCode(activeMatch.teamB)"></span> {{ activeMatch.teamB }}</h4>
                   <p class="subtle-text text-sm mt-1">{{ activeMatch.group }}<span v-if="activeMatch.matchDate"> · {{ formatarDataHora(activeMatch) }}</span></p>
                 </div>
                 <span class="chip px-4 py-2 text-sm font-bold" :class="matchStatusInfo(activeMatch).class">
@@ -591,7 +592,7 @@
                     <p class="text-[11px] subtle-text">Palpite enviado</p>
                   </div>
                   <div v-if="user && user.isAdmin" class="flex items-center gap-2 shrink-0">
-                    <span class="hidden sm:inline text-lg leading-none">{{ bandeira(activeMatch.teamA) }}</span>
+                    <span class="hidden sm:inline fi flag-ico text-lg" :class="'fi-' + bandeiraCode(activeMatch.teamA)"></span>
                     <input type="number" min="0" max="99" :value="pred.scoreA"
                       @focus="editingPalpiteCount++"
                       @blur="editingPalpiteCount--"
@@ -603,14 +604,14 @@
                       @blur="editingPalpiteCount--"
                       @change="salvarPalpiteAdmin(pred, 'scoreB', $event.target.value)"
                       class="score-box !min-w-[56px] !min-h-[52px] !text-xl text-center bg-black/40 border border-yellow-400/25 rounded-2xl outline-none focus:border-yellow-400/70 text-white">
-                    <span class="hidden sm:inline text-lg leading-none">{{ bandeira(activeMatch.teamB) }}</span>
+                    <span class="hidden sm:inline fi flag-ico text-lg" :class="'fi-' + bandeiraCode(activeMatch.teamB)"></span>
                   </div>
                   <div v-else class="flex items-center gap-2 shrink-0">
-                    <span class="hidden sm:inline text-lg leading-none">{{ bandeira(activeMatch.teamA) }}</span>
+                    <span class="hidden sm:inline fi flag-ico text-lg" :class="'fi-' + bandeiraCode(activeMatch.teamA)"></span>
                     <div class="score-box !min-w-[56px] !min-h-[52px] !text-xl">{{ exibirPlacar(pred.scoreA) }}</div>
                     <span class="text-yellow-400 font-black">X</span>
                     <div class="score-box !min-w-[56px] !min-h-[52px] !text-xl">{{ exibirPlacar(pred.scoreB) }}</div>
-                    <span class="hidden sm:inline text-lg leading-none">{{ bandeira(activeMatch.teamB) }}</span>
+                    <span class="hidden sm:inline fi flag-ico text-lg" :class="'fi-' + bandeiraCode(activeMatch.teamB)"></span>
                   </div>
                 </div>
               </div>
@@ -715,7 +716,6 @@
               <h3 class="text-xl text-yellow-300">🏆 Chave do mata-mata</h3>
               <p class="text-sm subtle-text">Acompanhe os confrontos da copa, das oitavas à grande final.</p>
             </div>
-            <span class="chip px-3 py-1 text-xs font-bold">Atualiza sozinho</span>
           </div>
 
           <div class="bracket-wrap" ref="bracketWrap">
@@ -726,7 +726,7 @@
                   <div v-for="m in par" :key="m.id" class="bracket-match">
                     <div v-for="side in ['teamA', 'teamB']" :key="side" class="bracket-row" :class="bracketRowClass(m, side)">
                       <template v-if="m[side]">
-                        <span>{{ bandeira(m[side]) }} {{ m[side] }}</span>
+                        <span><span class="fi flag-ico" :class="'fi-' + bandeiraCode(m[side])"></span> {{ m[side] }}</span>
                         <span v-if="m.isFinished" class="bracket-score">{{ exibirPlacar(m['realScore' + side.slice(-1)]) }}</span>
                       </template>
                       <span v-else>⏳ Em breve</span>
@@ -740,7 +740,7 @@
                   <div v-for="m in par" :key="m.id" class="bracket-match">
                     <div v-for="side in ['teamA', 'teamB']" :key="side" class="bracket-row" :class="bracketRowClass(m, side)">
                       <template v-if="m[side]">
-                        <span>{{ bandeira(m[side]) }} {{ m[side] }}</span>
+                        <span><span class="fi flag-ico" :class="'fi-' + bandeiraCode(m[side])"></span> {{ m[side] }}</span>
                         <span v-if="m.isFinished" class="bracket-score">{{ exibirPlacar(m['realScore' + side.slice(-1)]) }}</span>
                       </template>
                       <span v-else>⏳ Em breve</span>
@@ -753,7 +753,7 @@
                 <div class="bracket-match stub-l">
                   <div v-for="side in ['teamA', 'teamB']" :key="side" class="bracket-row" :class="bracketRowClass(bracketSides.left.semi, side)">
                     <template v-if="bracketSides.left.semi[side]">
-                      <span>{{ bandeira(bracketSides.left.semi[side]) }} {{ bracketSides.left.semi[side] }}</span>
+                      <span><span class="fi flag-ico" :class="'fi-' + bandeiraCode(bracketSides.left.semi[side])"></span> {{ bracketSides.left.semi[side] }}</span>
                       <span v-if="bracketSides.left.semi.isFinished" class="bracket-score">{{ exibirPlacar(bracketSides.left.semi['realScore' + side.slice(-1)]) }}</span>
                     </template>
                     <span v-else>⏳ Em breve</span>
@@ -767,7 +767,7 @@
                   <p class="text-[10px] uppercase tracking-[0.3em] text-yellow-300 font-bold mb-1.5">Final</p>
                   <div v-for="side in ['teamA', 'teamB']" :key="side" class="bracket-row" :class="bracketRowClass(bracketSides.final, side)">
                     <template v-if="bracketSides.final[side]">
-                      <span>{{ bandeira(bracketSides.final[side]) }} {{ bracketSides.final[side] }}</span>
+                      <span><span class="fi flag-ico" :class="'fi-' + bandeiraCode(bracketSides.final[side])"></span> {{ bracketSides.final[side] }}</span>
                       <span v-if="bracketSides.final.isFinished" class="bracket-score">{{ exibirPlacar(bracketSides.final['realScore' + side.slice(-1)]) }}</span>
                     </template>
                     <span v-else>⏳ Em breve</span>
@@ -777,7 +777,7 @@
                   <p class="text-[9px] uppercase tracking-[0.2em] text-yellow-300 font-bold mb-1 text-center">🥉 3º Lugar</p>
                   <div v-for="side in ['teamA', 'teamB']" :key="side" class="bracket-row" :class="bracketRowClass(bracketSides.third, side)">
                     <template v-if="bracketSides.third[side]">
-                      <span>{{ bandeira(bracketSides.third[side]) }} {{ bracketSides.third[side] }}</span>
+                      <span><span class="fi flag-ico" :class="'fi-' + bandeiraCode(bracketSides.third[side])"></span> {{ bracketSides.third[side] }}</span>
                       <span v-if="bracketSides.third.isFinished" class="bracket-score">{{ exibirPlacar(bracketSides.third['realScore' + side.slice(-1)]) }}</span>
                     </template>
                     <span v-else>⏳ Em breve</span>
@@ -789,7 +789,7 @@
                 <div class="bracket-match stub-r">
                   <div v-for="side in ['teamA', 'teamB']" :key="side" class="bracket-row" :class="bracketRowClass(bracketSides.right.semi, side)">
                     <template v-if="bracketSides.right.semi[side]">
-                      <span>{{ bandeira(bracketSides.right.semi[side]) }} {{ bracketSides.right.semi[side] }}</span>
+                      <span><span class="fi flag-ico" :class="'fi-' + bandeiraCode(bracketSides.right.semi[side])"></span> {{ bracketSides.right.semi[side] }}</span>
                       <span v-if="bracketSides.right.semi.isFinished" class="bracket-score">{{ exibirPlacar(bracketSides.right.semi['realScore' + side.slice(-1)]) }}</span>
                     </template>
                     <span v-else>⏳ Em breve</span>
@@ -802,7 +802,7 @@
                   <div v-for="m in par" :key="m.id" class="bracket-match">
                     <div v-for="side in ['teamA', 'teamB']" :key="side" class="bracket-row" :class="bracketRowClass(m, side)">
                       <template v-if="m[side]">
-                        <span>{{ bandeira(m[side]) }} {{ m[side] }}</span>
+                        <span><span class="fi flag-ico" :class="'fi-' + bandeiraCode(m[side])"></span> {{ m[side] }}</span>
                         <span v-if="m.isFinished" class="bracket-score">{{ exibirPlacar(m['realScore' + side.slice(-1)]) }}</span>
                       </template>
                       <span v-else>⏳ Em breve</span>
@@ -816,7 +816,7 @@
                   <div v-for="m in par" :key="m.id" class="bracket-match">
                     <div v-for="side in ['teamA', 'teamB']" :key="side" class="bracket-row" :class="bracketRowClass(m, side)">
                       <template v-if="m[side]">
-                        <span>{{ bandeira(m[side]) }} {{ m[side] }}</span>
+                        <span><span class="fi flag-ico" :class="'fi-' + bandeiraCode(m[side])"></span> {{ m[side] }}</span>
                         <span v-if="m.isFinished" class="bracket-score">{{ exibirPlacar(m['realScore' + side.slice(-1)]) }}</span>
                       </template>
                       <span v-else>⏳ Em breve</span>

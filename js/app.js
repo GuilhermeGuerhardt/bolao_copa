@@ -2,7 +2,7 @@ import { createApp } from 'vue';
 import { normalizeState } from './storage.js';
 import { calculateRanking } from './scoring.js';
 import { exportarBackup as downloadBackup, resizeImageToBase64, downloadCSV, parseCSV } from './utils.js';
-import { buildAllMatches, ALL_TEAMS, MATCH_DATES, TEAM_FLAGS, KNOCKOUT_PROGRESSION, getMatchWinner, getMatchLoser } from './config.js';
+import { buildAllMatches, ALL_TEAMS, MATCH_DATES, TEAM_FLAGS, TEAM_FLAG_CODES, KNOCKOUT_PROGRESSION, getMatchWinner, getMatchLoser } from './config.js';
 
 const API = '/api';
 const TOKEN_KEY = 'bolao_token';
@@ -379,6 +379,10 @@ createApp({
 
     bandeira(team) {
       return TEAM_FLAGS[team] || '';
+    },
+
+    bandeiraCode(team) {
+      return TEAM_FLAG_CODES[team] || '';
     },
 
     nomeTime(team) {

@@ -66,6 +66,57 @@ export const TEAM_FLAGS = {
   'Panamá': '🇵🇦'
 };
 
+export const TEAM_FLAG_CODES = {
+  'México': 'mx',
+  'África do Sul': 'za',
+  'Coreia do Sul': 'kr',
+  'Tchéquia': 'cz',
+  'Canadá': 'ca',
+  'Suíça': 'ch',
+  'Catar': 'qa',
+  'Bósnia': 'ba',
+  'Brasil': 'br',
+  'Marrocos': 'ma',
+  'Haiti': 'ht',
+  'Escócia': 'gb-sct',
+  'EUA': 'us',
+  'Paraguai': 'py',
+  'Austrália': 'au',
+  'Turquia': 'tr',
+  'Alemanha': 'de',
+  'Curaçao': 'cw',
+  'Costa do Marfim': 'ci',
+  'Equador': 'ec',
+  'Holanda': 'nl',
+  'Japão': 'jp',
+  'Tunísia': 'tn',
+  'Suécia': 'se',
+  'Bélgica': 'be',
+  'Egito': 'eg',
+  'Irã': 'ir',
+  'Nova Zelândia': 'nz',
+  'Espanha': 'es',
+  'Cabo Verde': 'cv',
+  'Arábia Saudita': 'sa',
+  'Uruguai': 'uy',
+  'França': 'fr',
+  'Senegal': 'sn',
+  'Noruega': 'no',
+  'Iraque': 'iq',
+  'Argentina': 'ar',
+  'Argélia': 'dz',
+  'Áustria': 'at',
+  'Jordânia': 'jo',
+  'Portugal': 'pt',
+  'Uzbequistão': 'uz',
+  'Colômbia': 'co',
+  'Congo DR': 'cd',
+  'Inglaterra': 'gb-eng',
+  'Croácia': 'hr',
+  'Gana': 'gh',
+  'Panamá': 'pa'
+};
+
 const GROUP_MATCH_PAIRS = [[0, 1], [2, 3], [0, 2], [1, 3], [0, 3], [1, 2]];
 
 export function buildAllMatches() {
