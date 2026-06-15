@@ -207,7 +207,7 @@
 
             <select v-model.number="selectedMatchId" @change="saveAdminState" class="w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 text-white font-bold mb-5 outline-none focus:border-yellow-400/70">
               <option :value="null">Selecione um jogo...</option>
-              <option v-for="m in matches" :key="m.id" :value="m.id">{{ m.group }} - {{ nomeTime(m.teamA) }} x {{ nomeTime(m.teamB) }}</option>
+              <option v-for="m in matches" :key="m.id" :value="m.id">{{ m.group }} - {{ m.teamA || 'A definir' }} x {{ m.teamB || 'A definir' }}</option>
             </select>
 
             <div v-if="activeMatch" class="rounded-[24px] bg-black/35 border border-white/8 p-4 md:p-5">
@@ -308,7 +308,7 @@
                   <label class="text-[11px] uppercase tracking-[0.2em] text-gray-400 mb-2 block">Palpite de campeão</label>
                   <select v-model="participantForm.championPick" class="w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 text-white font-bold outline-none focus:border-yellow-400/70">
                     <option :value="null">Selecione...</option>
-                    <option v-for="team in ALL_TEAMS" :key="team" :value="team">{{ bandeira(team) }} {{ team }}</option>
+                    <option v-for="team in ALL_TEAMS" :key="team" :value="team">{{ team }}</option>
                   </select>
                 </div>
                 <div>
@@ -339,7 +339,7 @@
                 <label class="text-[11px] uppercase tracking-[0.2em] text-gray-400 mb-2 block">Campeão real</label>
                 <select v-model="settings.actualChampion" class="w-full rounded-2xl bg-black/40 border border-white/10 px-4 py-3 text-white font-bold outline-none focus:border-yellow-400/70">
                   <option :value="null">Ainda não definido</option>
-                  <option v-for="team in ALL_TEAMS" :key="team" :value="team">{{ bandeira(team) }} {{ team }}</option>
+                  <option v-for="team in ALL_TEAMS" :key="team" :value="team">{{ team }}</option>
                 </select>
               </div>
               <div>
@@ -386,7 +386,7 @@
           <div class="flex gap-2">
             <select v-model="novoTimeClassificado" class="flex-1 rounded-2xl bg-black/40 border border-white/10 px-4 py-3 text-white font-bold outline-none focus:border-yellow-400/70">
               <option value="">Selecione um time...</option>
-              <option v-for="t in timesDisponiveisClassificados" :key="t" :value="t">{{ bandeira(t) }} {{ t }}</option>
+              <option v-for="t in timesDisponiveisClassificados" :key="t" :value="t">{{ t }}</option>
             </select>
             <button @click="adicionarTimeClassificado()" class="px-4 py-3 rounded-2xl font-black text-sm bg-green-500 text-slate-950 hover:bg-green-400 transition">Adicionar</button>
           </div>
@@ -401,7 +401,7 @@
                 <div class="text-center">
                   <select v-if="user && user.isAdmin && fase === 'Oitavas de Final'" :value="m.teamA" @change="definirTimeChave(m, 'teamA', $event.target.value)" class="w-full rounded-xl bg-black/40 border border-white/10 px-2 py-2 text-sm font-bold outline-none focus:border-yellow-400/70">
                     <option value="">A definir</option>
-                    <option v-for="t in settings.qualifiedTeams" :key="t" :value="t">{{ bandeira(t) }} {{ t }}</option>
+                    <option v-for="t in settings.qualifiedTeams" :key="t" :value="t">{{ t }}</option>
                   </select>
                   <p v-else class="font-bold text-sm">{{ nomeTime(m.teamA) }}</p>
                 </div>
@@ -412,7 +412,7 @@
                 <div class="text-center">
                   <select v-if="user && user.isAdmin && fase === 'Oitavas de Final'" :value="m.teamB" @change="definirTimeChave(m, 'teamB', $event.target.value)" class="w-full rounded-xl bg-black/40 border border-white/10 px-2 py-2 text-sm font-bold outline-none focus:border-yellow-400/70">
                     <option value="">A definir</option>
-                    <option v-for="t in settings.qualifiedTeams" :key="t" :value="t">{{ bandeira(t) }} {{ t }}</option>
+                    <option v-for="t in settings.qualifiedTeams" :key="t" :value="t">{{ t }}</option>
                   </select>
                   <p v-else class="font-bold text-sm">{{ nomeTime(m.teamB) }}</p>
                 </div>
@@ -545,7 +545,7 @@
 
             <select v-model.number="selectedMatchId" @change="saveAdminState" :disabled="!(user && user.isAdmin)" class="w-full rounded-2xl bg-black/40 border border-yellow-400/25 px-4 py-4 text-white text-lg font-black outline-none focus:border-yellow-400/70 mb-5 disabled:opacity-70">
               <option v-if="matches.length === 0" :value="null">Nenhum jogo selecionado</option>
-              <option v-for="m in matches" :key="m.id" :value="m.id">{{ m.group }} | {{ bandeira(m.teamA) }} {{ m.teamA }} x {{ bandeira(m.teamB) }} {{ m.teamB }}</option>
+              <option v-for="m in matches" :key="m.id" :value="m.id">{{ m.group }} | {{ m.teamA }} x {{ m.teamB }}</option>
             </select>
 
             <div v-if="activeMatch" class="rounded-[24px] bg-black/35 border border-white/8 p-4 md:p-5">
