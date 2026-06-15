@@ -718,8 +718,9 @@
             <span class="chip px-3 py-1 text-xs font-bold">Atualiza sozinho</span>
           </div>
 
-          <div class="bracket-wrap">
-            <div class="bracket-tree">
+          <div class="bracket-wrap" ref="bracketWrap">
+            <div class="bracket-host" :style="bracketHostStyle">
+            <div class="bracket-tree" :style="bracketTreeStyle">
               <div class="bracket-col">
                 <div v-for="(par, idx) in bracketSides.left.oitavas" :key="'eo'+idx" class="bracket-link l">
                   <div v-for="m in par" :key="m.id" class="bracket-match">
@@ -823,6 +824,7 @@
                   </div>
                 </div>
               </div>
+            </div>
             </div>
           </div>
         </section>

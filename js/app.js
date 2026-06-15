@@ -37,6 +37,7 @@ createApp({
 
       carouselIndex: 0,
       carouselTimer: null,
+      bracketScale: 1,
 
       ALL_TEAMS,
       MATCH_DATES,
@@ -182,6 +183,17 @@ createApp({
         final: this.chaveamentoPorFase['Final'][0],
         third: this.chaveamentoPorFase['Disputa de 3º Lugar'][0]
       };
+    },
+
+    bracketHostStyle() {
+      return {
+        width: `${1250 * this.bracketScale}px`,
+        height: `${352 * this.bracketScale}px`
+      };
+    },
+
+    bracketTreeStyle() {
+      return { transform: `scale(${this.bracketScale})` };
     }
   },
 
@@ -377,6 +389,13 @@ createApp({
       if (!match || !match[side]) return 'tbd';
       if (match.isFinished) return getMatchWinner(match) === match[side] ? 'win' : 'lose';
       return '';
+    },
+
+    atualizarBracketScale() {
+      const wrap = this.$refs.bracketWrap;
+      if (!wrap) return;
+      const disponivel = wrap.clientWidth - 28;
+      this.bracketScale = Math.min(1, disponivel / 1250);
     },
 
     adicionarTimeClassificado() {
@@ -823,5 +842,8 @@ createApp({
     this.iniciarEventos();
     this.iniciarCarrossel();
     if (this.token) await this.carregarSessao();
+
+    this.$nextTick(this.atualizarBracketScale);
+    window.addEventListener('resize', this.atualizarBracketScale);
   }
 }).mount('#app');
