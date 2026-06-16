@@ -62,7 +62,8 @@ createApp({
 
       rankingSnapshot: JSON.parse(localStorage.getItem('bolao_ranking_snapshot') || 'null') || {},
       rankingShowMovimento: false,
-      rankingMoveTimer: null
+      rankingMoveTimer: null,
+      prevFinishedCount: 0
     };
   },
 
@@ -122,9 +123,9 @@ createApp({
 
     rankingMovimentos() {
       const snap = this.rankingSnapshot;
-      return this.ranking.map(r => {
+      return this.ranking.map((r, i) => {
         if (!snap || snap[r.name] === undefined) return { delta: 0, tipo: 'same' };
-        const delta = r.points - snap[r.name];
+        const delta = snap[r.name] - (i + 1); // positivo = subiu posições
         if (delta > 0) return { delta, tipo: 'up' };
         if (delta < 0) return { delta: -delta, tipo: 'down' };
         return { delta: 0, tipo: 'same' };
@@ -285,18 +286,21 @@ createApp({
           return;
         }
 
-        if (this.ranking.length) {
-          const snapshot = {};
-          this.ranking.forEach(r => { snapshot[r.name] = r.points; });
-          localStorage.setItem('bolao_ranking_snapshot', JSON.stringify(snapshot));
-          this.rankingSnapshot = snapshot;
-        }
+        const rankBeforeUpdate = {};
+        this.ranking.forEach((r, i) => { rankBeforeUpdate[r.name] = i + 1; });
 
         this.predictions = normalized.predictions;
         this.participants = normalized.participants;
         this.settings = normalized.settings;
         this.matches = normalized.matches;
         this.selectedMatchId = normalized.selectedMatchId;
+
+        const newFinishedCount = this.matches.filter(m => m.isFinished).length;
+        if (this.prevFinishedCount > 0 && newFinishedCount > this.prevFinishedCount) {
+          localStorage.setItem('bolao_ranking_snapshot', JSON.stringify(rankBeforeUpdate));
+          this.rankingSnapshot = rankBeforeUpdate;
+        }
+        this.prevFinishedCount = newFinishedCount;
 
         if (this.matches.length && (this.selectedMatchId === null || !this.matches.some(m => m.id === this.selectedMatchId))) {
           this.selectedMatchId = this.matches[0].id;
