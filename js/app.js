@@ -122,9 +122,9 @@ createApp({
 
     rankingMovimentos() {
       const snap = this.rankingSnapshot;
-      return this.ranking.map((r, i) => {
-        if (!snap || !snap[r.name]) return { delta: 0, tipo: 'same' };
-        const delta = snap[r.name] - (i + 1);
+      return this.ranking.map(r => {
+        if (!snap || snap[r.name] === undefined) return { delta: 0, tipo: 'same' };
+        const delta = r.points - snap[r.name];
         if (delta > 0) return { delta, tipo: 'up' };
         if (delta < 0) return { delta: -delta, tipo: 'down' };
         return { delta: 0, tipo: 'same' };
@@ -287,7 +287,7 @@ createApp({
 
         if (this.ranking.length) {
           const snapshot = {};
-          this.ranking.forEach((r, i) => { snapshot[r.name] = i + 1; });
+          this.ranking.forEach(r => { snapshot[r.name] = r.points; });
           localStorage.setItem('bolao_ranking_snapshot', JSON.stringify(snapshot));
           this.rankingSnapshot = snapshot;
         }
