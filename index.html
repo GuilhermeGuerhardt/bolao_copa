@@ -704,6 +704,15 @@
                     <p class="text-xs subtle-text">Participante</p>
                   </div>
                   <div class="text-right font-black text-lg" :class="index === 0 ? 'text-yellow-300' : 'text-green-400'">{{ rank.points }} pts</div>
+                  <div class="rank-move" :class="rankingMovimentos[index].tipo">
+                    <template v-if="rankingMovimentos[index].tipo === 'up'">
+                      <i class="ti ti-arrow-up"></i>{{ rankingMovimentos[index].delta }}
+                    </template>
+                    <template v-else-if="rankingMovimentos[index].tipo === 'down'">
+                      <i class="ti ti-arrow-down"></i>{{ rankingMovimentos[index].delta }}
+                    </template>
+                    <template v-else><i class="ti ti-minus"></i></template>
+                  </div>
                 </div>
               </div>
             </section>

@@ -58,7 +58,10 @@ createApp({
       palpitesCsvMessage: '',
       palpitesCsvError: '',
       backupRestoreMessage: '',
-      backupRestoreError: ''
+      backupRestoreError: '',
+
+      rankingSnapshot: JSON.parse(localStorage.getItem('bolao_ranking_snapshot') || 'null') || {},
+      prevFinishedCount: 0
     };
   },
 
@@ -114,6 +117,17 @@ createApp({
 
     ranking() {
       return calculateRanking(this.participants, this.matches, this.predictions, this.settings);
+    },
+
+    rankingMovimentos() {
+      const snap = this.rankingSnapshot;
+      return this.ranking.map((r, i) => {
+        if (!snap || !snap[r.name]) return { delta: 0, tipo: 'same' };
+        const delta = snap[r.name] - (i + 1);
+        if (delta > 0) return { delta, tipo: 'up' };
+        if (delta < 0) return { delta: -delta, tipo: 'down' };
+        return { delta: 0, tipo: 'same' };
+      });
     },
 
     podium() {
@@ -270,11 +284,23 @@ createApp({
           return;
         }
 
+        const oldFinishedCount = this.matches.filter(m => m.isFinished).length;
+        const oldRanking = this.ranking;
+
         this.predictions = normalized.predictions;
         this.participants = normalized.participants;
         this.settings = normalized.settings;
         this.matches = normalized.matches;
         this.selectedMatchId = normalized.selectedMatchId;
+
+        const newFinishedCount = this.matches.filter(m => m.isFinished).length;
+        if (this.prevFinishedCount > 0 && newFinishedCount > oldFinishedCount) {
+          const snapshot = {};
+          oldRanking.forEach((r, i) => { snapshot[r.name] = i + 1; });
+          localStorage.setItem('bolao_ranking_snapshot', JSON.stringify(snapshot));
+          this.rankingSnapshot = snapshot;
+        }
+        this.prevFinishedCount = newFinishedCount;
 
         if (this.matches.length && (this.selectedMatchId === null || !this.matches.some(m => m.id === this.selectedMatchId))) {
           this.selectedMatchId = this.matches[0].id;
