@@ -60,18 +60,7 @@ createApp({
       backupRestoreMessage: '',
       backupRestoreError: '',
 
-      rankingSnapshot: (() => {
-        try {
-          const raw = JSON.parse(localStorage.getItem('bolao_ranking_snapshot') || 'null');
-          if (!raw || typeof raw !== 'object') return {};
-          const vals = Object.values(raw);
-          if (vals.length && typeof vals[0] !== 'object') {
-            localStorage.removeItem('bolao_ranking_snapshot');
-            return {};
-          }
-          return raw;
-        } catch { return {}; }
-      })(),
+      rankingSnapshot: JSON.parse(localStorage.getItem('bolao_ranking_snapshot') || 'null') || {},
       rankingShowMovimento: false,
       rankingMoveTimer: null,
       prevFinishedCount: 0
@@ -135,15 +124,11 @@ createApp({
     rankingMovimentos() {
       const snap = this.rankingSnapshot;
       return this.ranking.map((r, i) => {
-        if (!snap || snap[r.name] === undefined) return { delta: 0, tipo: 'same', ptsDelta: null };
-        const entry = snap[r.name];
-        const snapPos = typeof entry === 'object' ? entry.pos : entry;
-        const snapPts = typeof entry === 'object' ? entry.pts : null;
-        const posDelta = snapPos - (i + 1);
-        const ptsDelta = snapPts !== null ? r.points - snapPts : null;
-        if (posDelta > 0) return { delta: posDelta, tipo: 'up', ptsDelta };
-        if (posDelta < 0) return { delta: -posDelta, tipo: 'down', ptsDelta };
-        return { delta: 0, tipo: 'same', ptsDelta };
+        if (!snap || snap[r.name] === undefined) return { delta: 0, tipo: 'same' };
+        const delta = snap[r.name] - (i + 1);
+        if (delta > 0) return { delta, tipo: 'up' };
+        if (delta < 0) return { delta: -delta, tipo: 'down' };
+        return { delta: 0, tipo: 'same' };
       });
     },
 
@@ -301,12 +286,8 @@ createApp({
           return;
         }
 
-        const oldFinishedCount = this.matches.filter(m => m.isFinished).length;
-        const hasRanking = this.ranking.length > 0;
         const rankBeforeUpdate = {};
-        if (hasRanking) {
-          this.ranking.forEach((r, i) => { rankBeforeUpdate[r.name] = { pos: i + 1, pts: r.points }; });
-        }
+        this.ranking.forEach((r, i) => { rankBeforeUpdate[r.name] = i + 1; });
 
         this.predictions = normalized.predictions;
         this.participants = normalized.participants;
@@ -315,8 +296,7 @@ createApp({
         this.selectedMatchId = normalized.selectedMatchId;
 
         const newFinishedCount = this.matches.filter(m => m.isFinished).length;
-        const semSnapshot = !Object.keys(this.rankingSnapshot).length;
-        if (hasRanking && (newFinishedCount > oldFinishedCount || semSnapshot)) {
+        if (this.prevFinishedCount > 0 && newFinishedCount > this.prevFinishedCount) {
           localStorage.setItem('bolao_ranking_snapshot', JSON.stringify(rankBeforeUpdate));
           this.rankingSnapshot = rankBeforeUpdate;
         }
