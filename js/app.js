@@ -63,7 +63,7 @@ createApp({
       rankingSnapshot: JSON.parse(localStorage.getItem('bolao_ranking_snapshot') || 'null') || {},
       rankingShowMovimento: false,
       rankingMoveTimer: null,
-      prevFinishedCount: 0
+      prevLiveCount: 0
     };
   },
 
@@ -299,12 +299,12 @@ createApp({
         this.matches = normalized.matches;
         this.selectedMatchId = normalized.selectedMatchId;
 
-        const newFinishedCount = this.matches.filter(m => m.isFinished).length;
-        if (this.prevFinishedCount > 0 && newFinishedCount > this.prevFinishedCount) {
+        const newLiveCount = this.matches.filter(m => m.isLive).length;
+        if (newLiveCount > this.prevLiveCount) {
           localStorage.setItem('bolao_ranking_snapshot', JSON.stringify(rankBeforeUpdate));
           this.rankingSnapshot = rankBeforeUpdate;
         }
-        this.prevFinishedCount = newFinishedCount;
+        this.prevLiveCount = newLiveCount;
 
         if (this.matches.length && (this.selectedMatchId === null || !this.matches.some(m => m.id === this.selectedMatchId))) {
           this.selectedMatchId = this.matches[0].id;
