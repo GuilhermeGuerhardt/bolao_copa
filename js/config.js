@@ -154,6 +154,31 @@ export function buildAllMatches() {
     [noruegaIraque.teamA, noruegaIraque.teamB] = [noruegaIraque.teamB, noruegaIraque.teamA];
   }
 
+  const africaTchequia = allMatches.find(m => m.teamA === 'África do Sul' && m.teamB === 'Tchéquia');
+  if (africaTchequia) {
+    [africaTchequia.teamA, africaTchequia.teamB] = [africaTchequia.teamB, africaTchequia.teamA];
+  }
+
+  const marrocosEscocia = allMatches.find(m => m.teamA === 'Marrocos' && m.teamB === 'Escócia');
+  if (marrocosEscocia) {
+    [marrocosEscocia.teamA, marrocosEscocia.teamB] = [marrocosEscocia.teamB, marrocosEscocia.teamA];
+  }
+
+  const paraguaiTurquia = allMatches.find(m => m.teamA === 'Paraguai' && m.teamB === 'Turquia');
+  if (paraguaiTurquia) {
+    [paraguaiTurquia.teamA, paraguaiTurquia.teamB] = [paraguaiTurquia.teamB, paraguaiTurquia.teamA];
+  }
+
+  const curacaoEquador = allMatches.find(m => m.teamA === 'Curaçao' && m.teamB === 'Equador');
+  if (curacaoEquador) {
+    [curacaoEquador.teamA, curacaoEquador.teamB] = [curacaoEquador.teamB, curacaoEquador.teamA];
+  }
+
+  const japaoTunisia = allMatches.find(m => m.teamA === 'Japão' && m.teamB === 'Tunísia');
+  if (japaoTunisia) {
+    [japaoTunisia.teamA, japaoTunisia.teamB] = [japaoTunisia.teamB, japaoTunisia.teamA];
+  }
+
   const knockoutStages = [
     { label: 'Oitavas de Final', count: 8 },
     { label: 'Quartas de Final', count: 4 },
