@@ -60,7 +60,18 @@ createApp({
       backupRestoreMessage: '',
       backupRestoreError: '',
 
-      rankingSnapshot: JSON.parse(localStorage.getItem('bolao_ranking_snapshot') || 'null') || {},
+      rankingSnapshot: (() => {
+        try {
+          const raw = JSON.parse(localStorage.getItem('bolao_ranking_snapshot') || 'null');
+          if (!raw || typeof raw !== 'object') return {};
+          const vals = Object.values(raw);
+          if (vals.length && typeof vals[0] !== 'object') {
+            localStorage.removeItem('bolao_ranking_snapshot');
+            return {};
+          }
+          return raw;
+        } catch { return {}; }
+      })(),
       rankingShowMovimento: false,
       rankingMoveTimer: null,
       prevFinishedCount: 0
