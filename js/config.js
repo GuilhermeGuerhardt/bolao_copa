@@ -149,6 +149,11 @@ export function buildAllMatches() {
     [tunisiaSuecia.teamA, tunisiaSuecia.teamB] = [tunisiaSuecia.teamB, tunisiaSuecia.teamA];
   }
 
+  const noruegaIraque = allMatches.find(m => m.teamA === 'Noruega' && m.teamB === 'Iraque');
+  if (noruegaIraque) {
+    [noruegaIraque.teamA, noruegaIraque.teamB] = [noruegaIraque.teamB, noruegaIraque.teamA];
+  }
+
   const knockoutStages = [
     { label: 'Oitavas de Final', count: 8 },
     { label: 'Quartas de Final', count: 4 },
