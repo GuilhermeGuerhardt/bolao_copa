@@ -60,7 +60,9 @@ createApp({
       backupRestoreMessage: '',
       backupRestoreError: '',
 
-      rankingSnapshot: JSON.parse(localStorage.getItem('bolao_ranking_snapshot') || 'null') || {}
+      rankingSnapshot: JSON.parse(localStorage.getItem('bolao_ranking_snapshot') || 'null') || {},
+      rankingShowMovimento: false,
+      rankingMoveTimer: null
     };
   },
 
@@ -317,6 +319,17 @@ createApp({
       this.eventSource.onmessage = () => {
         this.carregarEstado();
       };
+    },
+
+    iniciarRankingCiclo() {
+      const mostrarMovimento = () => {
+        this.rankingShowMovimento = true;
+        this.rankingMoveTimer = setTimeout(() => {
+          this.rankingShowMovimento = false;
+          this.rankingMoveTimer = setTimeout(mostrarMovimento, 3500);
+        }, 2000);
+      };
+      this.rankingMoveTimer = setTimeout(mostrarMovimento, 3500);
     },
 
     iniciarCarrossel() {
@@ -865,6 +878,7 @@ createApp({
     this.iniciarPolling();
     this.iniciarEventos();
     this.iniciarCarrossel();
+    this.iniciarRankingCiclo();
     if (this.token) await this.carregarSessao();
 
     this.$nextTick(this.atualizarBracketScale);
