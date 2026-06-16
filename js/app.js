@@ -290,8 +290,12 @@ createApp({
           return;
         }
 
+        const oldFinishedCount = this.matches.filter(m => m.isFinished).length;
+        const hasRanking = this.ranking.length > 0;
         const rankBeforeUpdate = {};
-        this.ranking.forEach((r, i) => { rankBeforeUpdate[r.name] = { pos: i + 1, pts: r.points }; });
+        if (hasRanking) {
+          this.ranking.forEach((r, i) => { rankBeforeUpdate[r.name] = { pos: i + 1, pts: r.points }; });
+        }
 
         this.predictions = normalized.predictions;
         this.participants = normalized.participants;
@@ -300,7 +304,8 @@ createApp({
         this.selectedMatchId = normalized.selectedMatchId;
 
         const newFinishedCount = this.matches.filter(m => m.isFinished).length;
-        if (this.prevFinishedCount > 0 && newFinishedCount > this.prevFinishedCount) {
+        const semSnapshot = !Object.keys(this.rankingSnapshot).length;
+        if (hasRanking && (newFinishedCount > oldFinishedCount || semSnapshot)) {
           localStorage.setItem('bolao_ranking_snapshot', JSON.stringify(rankBeforeUpdate));
           this.rankingSnapshot = rankBeforeUpdate;
         }
