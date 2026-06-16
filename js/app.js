@@ -63,7 +63,7 @@ createApp({
       rankingSnapshot: JSON.parse(localStorage.getItem('bolao_ranking_snapshot') || 'null') || {},
       rankingShowMovimento: false,
       rankingMoveTimer: null,
-      prevLiveCount: 0
+      prevFinishedCount: 0
     };
   },
 
@@ -124,15 +124,11 @@ createApp({
     rankingMovimentos() {
       const snap = this.rankingSnapshot;
       return this.ranking.map((r, i) => {
-        if (!snap || snap[r.name] === undefined) return { delta: 0, tipo: 'same', ptsDelta: null };
-        const entry = snap[r.name];
-        const snapPos = typeof entry === 'object' ? entry.pos : entry;
-        const snapPts = typeof entry === 'object' ? entry.pts : null;
-        const posDelta = snapPos - (i + 1);
-        const ptsDelta = snapPts !== null ? r.points - snapPts : null;
-        if (posDelta > 0) return { delta: posDelta, tipo: 'up', ptsDelta };
-        if (posDelta < 0) return { delta: -posDelta, tipo: 'down', ptsDelta };
-        return { delta: 0, tipo: 'same', ptsDelta };
+        if (!snap || snap[r.name] === undefined) return { delta: 0, tipo: 'same' };
+        const delta = snap[r.name] - (i + 1);
+        if (delta > 0) return { delta, tipo: 'up' };
+        if (delta < 0) return { delta: -delta, tipo: 'down' };
+        return { delta: 0, tipo: 'same' };
       });
     },
 
@@ -291,7 +287,7 @@ createApp({
         }
 
         const rankBeforeUpdate = {};
-        this.ranking.forEach((r, i) => { rankBeforeUpdate[r.name] = { pos: i + 1, pts: r.points }; });
+        this.ranking.forEach((r, i) => { rankBeforeUpdate[r.name] = i + 1; });
 
         this.predictions = normalized.predictions;
         this.participants = normalized.participants;
@@ -299,12 +295,12 @@ createApp({
         this.matches = normalized.matches;
         this.selectedMatchId = normalized.selectedMatchId;
 
-        const newLiveCount = this.matches.filter(m => m.isLive).length;
-        if (newLiveCount > this.prevLiveCount) {
+        const newFinishedCount = this.matches.filter(m => m.isFinished).length;
+        if (this.prevFinishedCount > 0 && newFinishedCount > this.prevFinishedCount) {
           localStorage.setItem('bolao_ranking_snapshot', JSON.stringify(rankBeforeUpdate));
           this.rankingSnapshot = rankBeforeUpdate;
         }
-        this.prevLiveCount = newLiveCount;
+        this.prevFinishedCount = newFinishedCount;
 
         if (this.matches.length && (this.selectedMatchId === null || !this.matches.some(m => m.id === this.selectedMatchId))) {
           this.selectedMatchId = this.matches[0].id;
