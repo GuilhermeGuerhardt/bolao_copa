@@ -139,7 +139,9 @@ createApp({
       } else {
         const finalizadas = this.matches.filter(m => m.isFinished && m.finishedAt && temPlacar(m));
         if (!finalizadas.length) return this.ranking.map(() => ({ pontos: 0, tipo: 'same' }));
-        rodada = [finalizadas.reduce((a, b) => new Date(a.finishedAt) > new Date(b.finishedAt) ? a : b)];
+        const ultimaPartida = finalizadas.reduce((a, b) => new Date(a.finishedAt) > new Date(b.finishedAt) ? a : b);
+        const ultimaDataFinalizacao = ultimaPartida.finishedAt.slice(0, 10);
+        rodada = finalizadas.filter(m => m.finishedAt.slice(0, 10) === ultimaDataFinalizacao);
       }
 
       const rodadaIds = new Set(rodada.map(m => m.id));
