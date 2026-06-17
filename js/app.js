@@ -120,41 +120,54 @@ createApp({
     },
 
     rankingTemMovimento() {
-      return this.matches.some(m => m.isFinished);
+      return this.matches.some(m =>
+        (m.isFinished || m.isLive) && m.realScoreA !== null && m.realScoreB !== null
+      );
     },
 
     rankingMovimentos() {
-      const finalizadas = this.matches.filter(m => m.isFinished && m.finishedAt);
-      if (!finalizadas.length) return this.ranking.map(() => ({ pontos: 0, tipo: 'same' }));
+      const temPlacar = (m) =>
+        m.realScoreA !== null && m.realScoreB !== null &&
+        !Number.isNaN(Number(m.realScoreA)) && !Number.isNaN(Number(m.realScoreB));
 
-      const ultima = finalizadas.reduce((a, b) =>
-        new Date(a.finishedAt) > new Date(b.finishedAt) ? a : b
-      );
+      // A "rodada" é a partida em andamento (ao vivo com placar). Se não houver
+      // nenhuma ao vivo, usa a última partida finalizada como referência.
+      const aoVivo = this.matches.filter(m => m.isLive && temPlacar(m));
+      let rodada;
+      if (aoVivo.length) {
+        rodada = aoVivo;
+      } else {
+        const finalizadas = this.matches.filter(m => m.isFinished && m.finishedAt && temPlacar(m));
+        if (!finalizadas.length) return this.ranking.map(() => ({ pontos: 0, tipo: 'same' }));
+        rodada = [finalizadas.reduce((a, b) => new Date(a.finishedAt) > new Date(b.finishedAt) ? a : b)];
+      }
+
+      const rodadaIds = new Set(rodada.map(m => m.id));
 
       const pontosRodada = {};
       this.participants.forEach(p => { pontosRodada[p.name] = 0; });
 
-      const realA = Number(ultima.realScoreA);
-      const realB = Number(ultima.realScoreB);
-      if (ultima.realScoreA !== null && ultima.realScoreB !== null && !Number.isNaN(realA) && !Number.isNaN(realB)) {
+      rodada.forEach(match => {
+        const realA = Number(match.realScoreA);
+        const realB = Number(match.realScoreB);
         this.predictions
-          .filter(pred => pred.matchId === ultima.id)
+          .filter(pred => pred.matchId === match.id)
           .forEach(pred => {
             if (!Object.prototype.hasOwnProperty.call(pontosRodada, pred.participant)) return;
             const predA = Number(pred.scoreA);
             const predB = Number(pred.scoreB);
             if (pred.scoreA === null || pred.scoreB === null || Number.isNaN(predA) || Number.isNaN(predB)) return;
             if (predA === realA && predB === realB) {
-              pontosRodada[pred.participant] = 3;
+              pontosRodada[pred.participant] += 3;
             } else if (Math.sign(predA - predB) === Math.sign(realA - realB)) {
-              pontosRodada[pred.participant] = 1;
+              pontosRodada[pred.participant] += 1;
             }
           });
-      }
+      });
 
       const rankingAnterior = calculateRanking(
         this.participants,
-        this.matches.filter(m => m.id !== ultima.id),
+        this.matches.filter(m => !rodadaIds.has(m.id)),
         this.predictions,
         this.settings
       );
