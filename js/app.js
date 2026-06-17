@@ -60,17 +60,8 @@ createApp({
       backupRestoreMessage: '',
       backupRestoreError: '',
 
-      rankingSnapshot: (() => {
-        const raw = JSON.parse(localStorage.getItem('bolao_ranking_snapshot') || 'null');
-        if (raw && Object.values(raw).some(v => typeof v !== 'object')) {
-          localStorage.removeItem('bolao_ranking_snapshot');
-          return {};
-        }
-        return raw || {};
-      })(),
       rankingShowMovimento: false,
-      rankingMoveTimer: null,
-      prevFinishedCount: 0
+      rankingMoveTimer: null
     };
   },
 
@@ -128,21 +119,54 @@ createApp({
       return calculateRanking(this.participants, this.matches, this.predictions, this.settings);
     },
 
-    rankingTemSnapshot() {
-      return Object.keys(this.rankingSnapshot).length > 0;
+    rankingTemMovimento() {
+      return this.matches.some(m => m.isFinished);
     },
 
     rankingMovimentos() {
-      const snap = this.rankingSnapshot;
+      const finalizadas = this.matches.filter(m => m.isFinished && m.finishedAt);
+      if (!finalizadas.length) return this.ranking.map(() => ({ pontos: 0, tipo: 'same' }));
+
+      const ultima = finalizadas.reduce((a, b) =>
+        new Date(a.finishedAt) > new Date(b.finishedAt) ? a : b
+      );
+
+      const pontosRodada = {};
+      this.participants.forEach(p => { pontosRodada[p.name] = 0; });
+
+      const realA = Number(ultima.realScoreA);
+      const realB = Number(ultima.realScoreB);
+      if (ultima.realScoreA !== null && ultima.realScoreB !== null && !Number.isNaN(realA) && !Number.isNaN(realB)) {
+        this.predictions
+          .filter(pred => pred.matchId === ultima.id)
+          .forEach(pred => {
+            if (!Object.prototype.hasOwnProperty.call(pontosRodada, pred.participant)) return;
+            const predA = Number(pred.scoreA);
+            const predB = Number(pred.scoreB);
+            if (pred.scoreA === null || pred.scoreB === null || Number.isNaN(predA) || Number.isNaN(predB)) return;
+            if (predA === realA && predB === realB) {
+              pontosRodada[pred.participant] = 3;
+            } else if (Math.sign(predA - predB) === Math.sign(realA - realB)) {
+              pontosRodada[pred.participant] = 1;
+            }
+          });
+      }
+
+      const rankingAnterior = calculateRanking(
+        this.participants,
+        this.matches.filter(m => m.id !== ultima.id),
+        this.predictions,
+        this.settings
+      );
+      const posAnterior = {};
+      rankingAnterior.forEach((r, i) => { posAnterior[r.name] = i + 1; });
+
       return this.ranking.map((r, i) => {
-        if (!snap || snap[r.name] === undefined) return { pontos: 0, tipo: 'same' };
-        const snapData = snap[r.name];
-        const snapPosition = typeof snapData === 'object' ? snapData.position : snapData;
-        const snapPoints = typeof snapData === 'object' ? snapData.points : r.points;
         const posAtual = i + 1;
-        const pontos = r.points - snapPoints;
-        if (snapPosition > posAtual) return { pontos, tipo: 'up' };
-        if (snapPosition < posAtual) return { pontos, tipo: 'down' };
+        const oldPos = posAnterior[r.name] ?? posAtual;
+        const pontos = pontosRodada[r.name] ?? 0;
+        if (oldPos > posAtual) return { pontos, tipo: 'up' };
+        if (oldPos < posAtual) return { pontos, tipo: 'down' };
         return { pontos, tipo: 'same' };
       });
     },
@@ -301,21 +325,11 @@ createApp({
           return;
         }
 
-        const rankBeforeUpdate = {};
-        this.ranking.forEach((r, i) => { rankBeforeUpdate[r.name] = { position: i + 1, points: r.points }; });
-
         this.predictions = normalized.predictions;
         this.participants = normalized.participants;
         this.settings = normalized.settings;
         this.matches = normalized.matches;
         this.selectedMatchId = normalized.selectedMatchId;
-
-        const newFinishedCount = this.matches.filter(m => m.isFinished).length;
-        if (this.prevFinishedCount > 0 && newFinishedCount > this.prevFinishedCount) {
-          localStorage.setItem('bolao_ranking_snapshot', JSON.stringify(rankBeforeUpdate));
-          this.rankingSnapshot = rankBeforeUpdate;
-        }
-        this.prevFinishedCount = newFinishedCount;
 
         if (this.matches.length && (this.selectedMatchId === null || !this.matches.some(m => m.id === this.selectedMatchId))) {
           this.selectedMatchId = this.matches[0].id;
