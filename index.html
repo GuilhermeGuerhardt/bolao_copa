@@ -707,9 +707,9 @@
                     <transition name="rank-fade" mode="out-in">
                       <div v-if="!rankingShowMovimento" key="pts" class="font-black text-lg" :class="index === 0 ? 'text-yellow-300' : 'text-green-400'">{{ rank.points }} pts</div>
                       <div v-else key="mov" class="rank-move" :class="(rankingMovimentos[index] || {}).tipo || 'same'">
-                        <template v-if="(rankingMovimentos[index] || {}).tipo === 'up'"><svg width="11" height="11" viewBox="0 0 10 10" fill="currentColor"><path d="M5 1L10 9H0L5 1Z"/></svg>{{ rankingMovimentos[index].delta }}</template>
-                        <template v-else-if="(rankingMovimentos[index] || {}).tipo === 'down'"><svg width="11" height="11" viewBox="0 0 10 10" fill="currentColor"><path d="M5 9L0 1H10L5 9Z"/></svg>{{ rankingMovimentos[index].delta }}</template>
-                        <template v-else><svg width="11" height="4" viewBox="0 0 10 4" fill="currentColor"><rect width="10" height="4" rx="2"/></svg></template>
+                        <template v-if="(rankingMovimentos[index] || {}).tipo === 'up'"><svg width="11" height="11" viewBox="0 0 10 10" fill="currentColor"><path d="M5 1L10 9H0L5 1Z"/></svg>+{{ rankingMovimentos[index].pontos }} pts</template>
+                        <template v-else-if="(rankingMovimentos[index] || {}).tipo === 'down'"><svg width="11" height="11" viewBox="0 0 10 10" fill="currentColor"><path d="M5 9L0 1H10L5 9Z"/></svg>+{{ rankingMovimentos[index].pontos }} pts</template>
+                        <template v-else><svg width="11" height="4" viewBox="0 0 10 4" fill="currentColor"><rect width="10" height="4" rx="2"/></svg>+{{ (rankingMovimentos[index] || {}).pontos || 0 }} pts</template>
                       </div>
                     </transition>
                   </div>

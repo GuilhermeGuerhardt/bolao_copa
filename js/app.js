@@ -124,11 +124,15 @@ createApp({
     rankingMovimentos() {
       const snap = this.rankingSnapshot;
       return this.ranking.map((r, i) => {
-        if (!snap || snap[r.name] === undefined) return { delta: 0, tipo: 'same' };
-        const delta = snap[r.name] - (i + 1);
-        if (delta > 0) return { delta, tipo: 'up' };
-        if (delta < 0) return { delta: -delta, tipo: 'down' };
-        return { delta: 0, tipo: 'same' };
+        if (!snap || snap[r.name] === undefined) return { pontos: 0, tipo: 'same' };
+        const snapData = snap[r.name];
+        const snapPosition = typeof snapData === 'object' ? snapData.position : snapData;
+        const snapPoints = typeof snapData === 'object' ? snapData.points : r.points;
+        const posAtual = i + 1;
+        const pontos = r.points - snapPoints;
+        if (snapPosition > posAtual) return { pontos, tipo: 'up' };
+        if (snapPosition < posAtual) return { pontos, tipo: 'down' };
+        return { pontos, tipo: 'same' };
       });
     },
 
@@ -287,7 +291,7 @@ createApp({
         }
 
         const rankBeforeUpdate = {};
-        this.ranking.forEach((r, i) => { rankBeforeUpdate[r.name] = i + 1; });
+        this.ranking.forEach((r, i) => { rankBeforeUpdate[r.name] = { position: i + 1, points: r.points }; });
 
         this.predictions = normalized.predictions;
         this.participants = normalized.participants;
