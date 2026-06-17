@@ -128,6 +128,10 @@ createApp({
       return calculateRanking(this.participants, this.matches, this.predictions, this.settings);
     },
 
+    rankingTemSnapshot() {
+      return Object.keys(this.rankingSnapshot).length > 0;
+    },
+
     rankingMovimentos() {
       const snap = this.rankingSnapshot;
       return this.ranking.map((r, i) => {
