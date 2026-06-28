@@ -79,10 +79,11 @@
 
       <!-- Navegação -->
       <nav class="max-w-7xl mx-auto px-4 md:px-6 pt-4 flex flex-wrap gap-2">
+        <button @click="view = 'tabela'" class="px-4 py-2 rounded-2xl font-black text-sm transition" :class="view === 'tabela' ? 'bg-yellow-500 text-black' : 'glass text-white/80 hover:text-white'">🏆 Tabela mata-mata</button>
         <button @click="view = 'transmissao'" class="px-4 py-2 rounded-2xl font-black text-sm transition" :class="view === 'transmissao' ? 'bg-yellow-500 text-black' : 'glass text-white/80 hover:text-white'">📺 Transmissão</button>
         <button v-if="user" @click="abrirPerfil()" class="px-4 py-2 rounded-2xl font-black text-sm transition" :class="view === 'perfil' ? 'bg-yellow-500 text-black' : 'glass text-white/80 hover:text-white'">👤 Perfil</button>
         <button v-if="user && user.isAdmin" @click="view = 'admin'; carregarParticipantesAdmin()" class="px-4 py-2 rounded-2xl font-black text-sm transition" :class="view === 'admin' ? 'bg-yellow-500 text-black' : 'glass text-white/80 hover:text-white'">⚙️ Admin</button>
-        <button v-if="(user && user.isAdmin) || faseGruposCompleta" @click="view = 'matamata'; if (user && user.isAdmin) prepararMataMata()" class="px-4 py-2 rounded-2xl font-black text-sm transition" :class="view === 'matamata' ? 'bg-yellow-500 text-black' : 'glass text-white/80 hover:text-white'">🏆 Mata-mata</button>
+        <button v-if="(user && user.isAdmin) || faseGruposCompleta" @click="view = 'matamata'; if (user && user.isAdmin) prepararMataMata()" class="px-4 py-2 rounded-2xl font-black text-sm transition" :class="view === 'matamata' ? 'bg-yellow-500 text-black' : 'glass text-white/80 hover:text-white'">🛠️ Gerenciar chave</button>
       </nav>
 
       <!-- Painel principal -->
@@ -488,6 +489,50 @@
         </section>
       </main>
 
+      <!-- Tabela do mata-mata (pública) -->
+      <main v-else-if="view === 'tabela'" class="max-w-[1600px] mx-auto px-4 md:px-6 pt-6">
+        <section class="glass rounded-[28px] p-4 md:p-6 card-glow">
+          <div class="flex items-center gap-3 mb-5">
+            <h3 class="text-xl md:text-2xl text-yellow-300 font-black">🏆 Copa 2026 — Chave do mata-mata</h3>
+          </div>
+
+          <div v-if="!faseGruposCompleta && !(user && user.isAdmin)" class="text-sm subtle-text py-12 text-center">
+            A chave do mata-mata será liberada assim que a fase de grupos terminar.
+          </div>
+
+          <div v-else class="kmata-scroll">
+            <div class="kmata" :style="tabelaAlturaStyle">
+              <div v-for="col in tabelaFases" :key="col.fase" class="kmata-col">
+                <div class="kmata-head">{{ col.fase }}</div>
+                <div class="kmata-body">
+                  <div v-for="m in col.jogos" :key="m.id" class="kmata-game-wrap">
+                    <p class="kmata-date">{{ dataHoraJogo(m) || ' ' }}</p>
+                    <div class="kmata-game">
+                      <div class="kmata-rows">
+                        <div v-for="side in ['teamA','teamB']" :key="side" class="kmata-team" :class="bracketRowClass(m, side)">
+                          <template v-if="textoSlot(m, side).team">
+                            <span class="fi flag-ico kmata-flag" :class="'fi-' + bandeiraCode(textoSlot(m, side).team)"></span>
+                            <span class="kmata-name">{{ textoSlot(m, side).team }}</span>
+                          </template>
+                          <template v-else>
+                            <span class="kmata-shield"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l8 3v6c0 5-3.5 8-8 11-4.5-3-8-6-8-11V5l8-3z"/></svg></span>
+                            <span class="kmata-name kmata-ph">{{ textoSlot(m, side).placeholder }}</span>
+                          </template>
+                        </div>
+                      </div>
+                      <div class="kmata-score">
+                        <span :class="bracketRowClass(m, 'teamA')">{{ m.isFinished ? exibirPlacar(m.realScoreA) : '' }}</span>
+                        <span :class="bracketRowClass(m, 'teamB')">{{ m.isFinished ? exibirPlacar(m.realScoreB) : '' }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
       <!-- Modo transmissão -->
       <main v-else class="max-w-7xl mx-auto px-4 md:px-6 pt-6 space-y-6">
         <section class="glass rounded-[28px] p-5 md:p-6 card-glow">
@@ -716,153 +761,6 @@
                 </div>
               </div>
             </section>
-          </div>
-        </section>
-
-        <section class="glass rounded-[28px] p-5 md:p-6 card-glow">
-          <div class="flex items-center justify-between gap-3 mb-4 flex-wrap">
-            <div>
-              <h3 class="text-xl text-yellow-300">🏆 Chave do mata-mata</h3>
-              <p class="text-sm subtle-text">Acompanhe os confrontos da copa, das oitavas à grande final.</p>
-            </div>
-          </div>
-
-          <div class="bracket-wrap" ref="bracketWrap">
-            <div class="bracket-host" :style="bracketHostStyle">
-            <div class="bracket-tree" :style="bracketTreeStyle">
-              <div class="bracket-col col-16">
-                <div v-for="(par, idx) in bracketSides.left.dezesseis" :key="'es'+idx" class="bracket-link l small">
-                  <div v-for="m in par" :key="m.id" class="bracket-match">
-                    <div v-for="side in ['teamA', 'teamB']" :key="side" class="bracket-row" :class="bracketRowClass(m, side)">
-                      <template v-if="m[side]">
-                        <span><span class="fi flag-ico" :class="'fi-' + bandeiraCode(m[side])"></span> {{ m[side] }}</span>
-                        <span v-if="m.isFinished" class="bracket-score">{{ exibirPlacar(m['realScore' + side.slice(-1)]) }}</span>
-                      </template>
-                      <span v-else>⏳ Em breve</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div class="bracket-col">
-                <div v-for="(par, idx) in bracketSides.left.oitavas" :key="'eo'+idx" class="bracket-link l">
-                  <div v-for="m in par" :key="m.id" class="bracket-match">
-                    <div v-for="side in ['teamA', 'teamB']" :key="side" class="bracket-row" :class="bracketRowClass(m, side)">
-                      <template v-if="m[side]">
-                        <span><span class="fi flag-ico" :class="'fi-' + bandeiraCode(m[side])"></span> {{ m[side] }}</span>
-                        <span v-if="m.isFinished" class="bracket-score">{{ exibirPlacar(m['realScore' + side.slice(-1)]) }}</span>
-                      </template>
-                      <span v-else>⏳ Em breve</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div class="bracket-col">
-                <div v-for="(par, idx) in bracketSides.left.quartas" :key="'eq'+idx" class="bracket-link l full">
-                  <div v-for="m in par" :key="m.id" class="bracket-match">
-                    <div v-for="side in ['teamA', 'teamB']" :key="side" class="bracket-row" :class="bracketRowClass(m, side)">
-                      <template v-if="m[side]">
-                        <span><span class="fi flag-ico" :class="'fi-' + bandeiraCode(m[side])"></span> {{ m[side] }}</span>
-                        <span v-if="m.isFinished" class="bracket-score">{{ exibirPlacar(m['realScore' + side.slice(-1)]) }}</span>
-                      </template>
-                      <span v-else>⏳ Em breve</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div class="bracket-col semi">
-                <div class="bracket-match stub-l">
-                  <div v-for="side in ['teamA', 'teamB']" :key="side" class="bracket-row" :class="bracketRowClass(bracketSides.left.semi, side)">
-                    <template v-if="bracketSides.left.semi[side]">
-                      <span><span class="fi flag-ico" :class="'fi-' + bandeiraCode(bracketSides.left.semi[side])"></span> {{ bracketSides.left.semi[side] }}</span>
-                      <span v-if="bracketSides.left.semi.isFinished" class="bracket-score">{{ exibirPlacar(bracketSides.left.semi['realScore' + side.slice(-1)]) }}</span>
-                    </template>
-                    <span v-else>⏳ Em breve</span>
-                  </div>
-                </div>
-              </div>
-
-              <div class="bracket-center">
-                <div class="bracket-trophy">🏆</div>
-                <div class="bracket-final">
-                  <p class="text-[10px] uppercase tracking-[0.3em] text-yellow-300 font-bold mb-1.5">Final</p>
-                  <div v-for="side in ['teamA', 'teamB']" :key="side" class="bracket-row" :class="bracketRowClass(bracketSides.final, side)">
-                    <template v-if="bracketSides.final[side]">
-                      <span><span class="fi flag-ico" :class="'fi-' + bandeiraCode(bracketSides.final[side])"></span> {{ bracketSides.final[side] }}</span>
-                      <span v-if="bracketSides.final.isFinished" class="bracket-score">{{ exibirPlacar(bracketSides.final['realScore' + side.slice(-1)]) }}</span>
-                    </template>
-                    <span v-else>⏳ Em breve</span>
-                  </div>
-                </div>
-                <div class="bracket-third">
-                  <p class="text-[9px] uppercase tracking-[0.2em] text-yellow-300 font-bold mb-1 text-center">🥉 3º Lugar</p>
-                  <div v-for="side in ['teamA', 'teamB']" :key="side" class="bracket-row" :class="bracketRowClass(bracketSides.third, side)">
-                    <template v-if="bracketSides.third[side]">
-                      <span><span class="fi flag-ico" :class="'fi-' + bandeiraCode(bracketSides.third[side])"></span> {{ bracketSides.third[side] }}</span>
-                      <span v-if="bracketSides.third.isFinished" class="bracket-score">{{ exibirPlacar(bracketSides.third['realScore' + side.slice(-1)]) }}</span>
-                    </template>
-                    <span v-else>⏳ Em breve</span>
-                  </div>
-                </div>
-              </div>
-
-              <div class="bracket-col semi">
-                <div class="bracket-match stub-r">
-                  <div v-for="side in ['teamA', 'teamB']" :key="side" class="bracket-row" :class="bracketRowClass(bracketSides.right.semi, side)">
-                    <template v-if="bracketSides.right.semi[side]">
-                      <span><span class="fi flag-ico" :class="'fi-' + bandeiraCode(bracketSides.right.semi[side])"></span> {{ bracketSides.right.semi[side] }}</span>
-                      <span v-if="bracketSides.right.semi.isFinished" class="bracket-score">{{ exibirPlacar(bracketSides.right.semi['realScore' + side.slice(-1)]) }}</span>
-                    </template>
-                    <span v-else>⏳ Em breve</span>
-                  </div>
-                </div>
-              </div>
-
-              <div class="bracket-col">
-                <div v-for="(par, idx) in bracketSides.right.quartas" :key="'dq'+idx" class="bracket-link r full">
-                  <div v-for="m in par" :key="m.id" class="bracket-match">
-                    <div v-for="side in ['teamA', 'teamB']" :key="side" class="bracket-row" :class="bracketRowClass(m, side)">
-                      <template v-if="m[side]">
-                        <span><span class="fi flag-ico" :class="'fi-' + bandeiraCode(m[side])"></span> {{ m[side] }}</span>
-                        <span v-if="m.isFinished" class="bracket-score">{{ exibirPlacar(m['realScore' + side.slice(-1)]) }}</span>
-                      </template>
-                      <span v-else>⏳ Em breve</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div class="bracket-col">
-                <div v-for="(par, idx) in bracketSides.right.oitavas" :key="'do'+idx" class="bracket-link r">
-                  <div v-for="m in par" :key="m.id" class="bracket-match">
-                    <div v-for="side in ['teamA', 'teamB']" :key="side" class="bracket-row" :class="bracketRowClass(m, side)">
-                      <template v-if="m[side]">
-                        <span><span class="fi flag-ico" :class="'fi-' + bandeiraCode(m[side])"></span> {{ m[side] }}</span>
-                        <span v-if="m.isFinished" class="bracket-score">{{ exibirPlacar(m['realScore' + side.slice(-1)]) }}</span>
-                      </template>
-                      <span v-else>⏳ Em breve</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div class="bracket-col col-16">
-                <div v-for="(par, idx) in bracketSides.right.dezesseis" :key="'ds'+idx" class="bracket-link r small">
-                  <div v-for="m in par" :key="m.id" class="bracket-match">
-                    <div v-for="side in ['teamA', 'teamB']" :key="side" class="bracket-row" :class="bracketRowClass(m, side)">
-                      <template v-if="m[side]">
-                        <span><span class="fi flag-ico" :class="'fi-' + bandeiraCode(m[side])"></span> {{ m[side] }}</span>
-                        <span v-if="m.isFinished" class="bracket-score">{{ exibirPlacar(m['realScore' + side.slice(-1)]) }}</span>
-                      </template>
-                      <span v-else>⏳ Em breve</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            </div>
           </div>
         </section>
       </main>

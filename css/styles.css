@@ -517,3 +517,142 @@ input[type=number]::-webkit-outer-spin-button {
   border-radius: 14px;
   padding: 8px 12px;
 }
+
+/* ── Tabela linear do mata-mata (estilo colunas por fase) ──── */
+.kmata-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 10px;
+}
+
+.kmata {
+  display: flex;
+  gap: 30px;
+  width: max-content;
+  min-width: 100%;
+}
+
+.kmata-col {
+  display: flex;
+  flex-direction: column;
+  width: 240px;
+  flex-shrink: 0;
+}
+
+.kmata-head {
+  font-size: 14px;
+  font-weight: 800;
+  color: #fff;
+  text-align: center;
+  padding-bottom: 10px;
+  margin-bottom: 4px;
+  border-bottom: 2px solid rgba(234, 179, 8, .55);
+}
+
+.kmata-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+}
+
+.kmata-game-wrap {
+  display: flex;
+  flex-direction: column;
+}
+
+.kmata-date {
+  font-size: 10.5px;
+  color: rgba(255, 255, 255, .4);
+  margin: 0 0 4px 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-height: 14px;
+}
+
+.kmata-game {
+  display: flex;
+  align-items: stretch;
+  background: rgba(255, 255, 255, .035);
+  border: 1px solid rgba(255, 255, 255, .09);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.kmata-rows {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.kmata-team {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #e7e7ea;
+  min-width: 0;
+}
+
+.kmata-team + .kmata-team {
+  border-top: 1px solid rgba(255, 255, 255, .07);
+}
+
+.kmata-flag {
+  width: 18px;
+  height: 13px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.kmata-shield {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  display: flex;
+  color: rgba(255, 255, 255, .35);
+}
+.kmata-shield svg { width: 100%; height: 100%; }
+
+.kmata-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kmata-ph {
+  color: rgba(255, 255, 255, .5);
+  font-weight: 500;
+}
+
+.kmata-team.win { color: #fde68a; font-weight: 800; }
+.kmata-team.lose { color: #8b8f98; }
+
+.kmata-score {
+  display: flex;
+  flex-direction: column;
+  width: 36px;
+  flex-shrink: 0;
+  border-left: 1px solid rgba(255, 255, 255, .09);
+}
+
+.kmata-score span {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 800;
+  color: #cdd0d6;
+}
+
+.kmata-score span + span {
+  border-top: 1px solid rgba(255, 255, 255, .07);
+}
+
+.kmata-score span.win { color: #fde047; }
+.kmata-score span.lose { color: #6b7280; }

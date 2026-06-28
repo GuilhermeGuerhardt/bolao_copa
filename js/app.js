@@ -13,7 +13,7 @@ createApp({
       token: localStorage.getItem(TOKEN_KEY) || null,
       user: null,
 
-      view: 'transmissao',
+      view: 'tabela',
       showAdminLogin: false,
       authError: '',
       showPassword: { login: false, current: false, new: false, confirm: false },
@@ -272,6 +272,20 @@ createApp({
 
     bracketTreeStyle() {
       return { transform: `scale(${this.bracketScale})` };
+    },
+
+    // Tabela do mata-mata em colunas (16 avos → final), no estilo linear.
+    tabelaFases() {
+      return FASE_ORDER
+        .filter(fase => this.chaveamentoPorFase[fase])
+        .map(fase => ({ fase, jogos: this.chaveamentoPorFase[fase] }));
+    },
+
+    // Altura comum a todas as colunas para o alinhamento de árvore (a fase com
+    // mais jogos — os 16 avos — define a altura; as demais distribuem o espaço).
+    tabelaAlturaStyle() {
+      const max = Math.max(0, ...this.tabelaFases.map(f => f.jogos.length));
+      return max ? { height: `${max * 96}px` } : {};
     }
   },
 
@@ -328,7 +342,7 @@ createApp({
       this.token = null;
       this.user = null;
       localStorage.removeItem(TOKEN_KEY);
-      this.view = 'transmissao';
+      this.view = 'tabela';
       this.showAdminLogin = false;
     },
 
@@ -482,6 +496,30 @@ createApp({
       if (!match || !match[side]) return 'tbd';
       if (match.isFinished) return getMatchWinner(match) === match[side] ? 'win' : 'lose';
       return '';
+    },
+
+    // Texto de um lado de um jogo do mata-mata: o time, ou o placeholder
+    // "Vencedor/Perdedor Jogo X" quando ainda depende de uma fase anterior.
+    textoSlot(match, side) {
+      if (match[side]) return { team: match[side] };
+      const prog = KNOCKOUT_PROGRESSION[match.id];
+      if (prog) {
+        const src = prog[side === 'teamA' ? 0 : 1];
+        const verbo = src.result === 'loser' ? 'Perdedor' : 'Vencedor';
+        return { placeholder: `${verbo} Jogo ${src.from}` };
+      }
+      return { placeholder: 'A definir' };
+    },
+
+    dataHoraJogo(match) {
+      if (!match || !match.matchDate) return '';
+      const [ano, mes, dia] = match.matchDate.split('-').map(Number);
+      const data = new Date(ano, mes - 1, dia);
+      const dias = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
+      const meses = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+      let texto = `${dias[data.getDay()]}, ${dia}° ${meses[mes - 1]}`;
+      if (match.matchTime) texto += ` - ${match.matchTime}`;
+      return texto;
     },
 
     atualizarBracketScale() {
