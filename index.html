@@ -502,12 +502,12 @@
 
           <div v-else class="kmata-scroll">
             <div class="kmata" :style="tabelaAlturaStyle">
-              <div v-for="col in tabelaFases" :key="col.fase" class="kmata-col">
+              <div v-for="col in tabelaFases" :key="col.fase" class="kmata-col" :class="{ liga: col.liga }">
                 <div class="kmata-head">{{ col.fase }}</div>
                 <div class="kmata-body">
                   <div v-for="m in col.jogos" :key="m.id" class="kmata-game-wrap">
-                    <p class="kmata-date">{{ dataHoraJogo(m) || ' ' }}</p>
                     <div class="kmata-game">
+                      <p class="kmata-date">{{ dataHoraJogo(m) }}</p>
                       <div class="kmata-rows">
                         <div v-for="side in ['teamA','teamB']" :key="side" class="kmata-team" :class="bracketRowClass(m, side)">
                           <template v-if="textoSlot(m, side).team">

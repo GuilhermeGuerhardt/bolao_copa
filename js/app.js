@@ -276,9 +276,13 @@ createApp({
 
     // Tabela do mata-mata em colunas (16 avos → final), no estilo linear.
     tabelaFases() {
+      // Fases que convergem para a fase seguinte (desenham as linhas da chave).
+      // Da semifinal em diante não liga, para a linha não apontar para a coluna
+      // de disputa de 3º lugar, que fica entre a semi e a final.
+      const ligam = ['16 avos de Final', 'Oitavas de Final', 'Quartas de Final'];
       return FASE_ORDER
         .filter(fase => this.chaveamentoPorFase[fase])
-        .map(fase => ({ fase, jogos: this.chaveamentoPorFase[fase] }));
+        .map(fase => ({ fase, jogos: this.chaveamentoPorFase[fase], liga: ligam.includes(fase) }));
     },
 
     // Altura comum a todas as colunas para o alinhamento de árvore (a fase com
