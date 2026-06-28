@@ -179,12 +179,16 @@ export function buildAllMatches() {
     [japaoTunisia.teamA, japaoTunisia.teamB] = [japaoTunisia.teamB, japaoTunisia.teamA];
   }
 
+  // Os "16 avos de Final" entram por último (IDs 89-104) para preservar os IDs
+  // já existentes das demais fases. A ordem visual/lógica é resolvida em outro
+  // lugar (FASE_ORDER / KNOCKOUT_PROGRESSION), não pela ordem dos IDs.
   const knockoutStages = [
     { label: 'Oitavas de Final', count: 8 },
     { label: 'Quartas de Final', count: 4 },
     { label: 'Semifinal', count: 2 },
     { label: 'Disputa de 3º Lugar', count: 1 },
-    { label: 'Final', count: 1 }
+    { label: 'Final', count: 1 },
+    { label: '16 avos de Final', count: 16 }
   ];
   knockoutStages.forEach(stage => {
     for (let i = 0; i < stage.count; i++) {
@@ -204,7 +208,25 @@ export function buildAllMatches() {
   return allMatches;
 }
 
+// Ordem lógica das fases do mata-mata (usada na UI e no bracket). Independe dos IDs.
+export const FASE_ORDER = [
+  '16 avos de Final',
+  'Oitavas de Final',
+  'Quartas de Final',
+  'Semifinal',
+  'Disputa de 3º Lugar',
+  'Final'
+];
+
 export const KNOCKOUT_PROGRESSION = {
+  73: [{ from: 89, result: 'winner' }, { from: 90, result: 'winner' }],
+  74: [{ from: 91, result: 'winner' }, { from: 92, result: 'winner' }],
+  75: [{ from: 93, result: 'winner' }, { from: 94, result: 'winner' }],
+  76: [{ from: 95, result: 'winner' }, { from: 96, result: 'winner' }],
+  77: [{ from: 97, result: 'winner' }, { from: 98, result: 'winner' }],
+  78: [{ from: 99, result: 'winner' }, { from: 100, result: 'winner' }],
+  79: [{ from: 101, result: 'winner' }, { from: 102, result: 'winner' }],
+  80: [{ from: 103, result: 'winner' }, { from: 104, result: 'winner' }],
   81: [{ from: 73, result: 'winner' }, { from: 74, result: 'winner' }],
   82: [{ from: 75, result: 'winner' }, { from: 76, result: 'winner' }],
   83: [{ from: 77, result: 'winner' }, { from: 78, result: 'winner' }],

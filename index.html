@@ -375,7 +375,7 @@
         <!-- Times classificados (admin) -->
         <section v-if="user && user.isAdmin" class="glass card-glow rounded-[28px] p-5 md:p-7">
           <h3 class="text-lg md:text-xl mb-1">🏆 Times Classificados</h3>
-          <p class="text-sm subtle-text mb-4">Times que avançaram da fase de grupos — ficam disponíveis para montar as Oitavas de Final.</p>
+          <p class="text-sm subtle-text mb-4">Times que avançaram da fase de grupos — ficam disponíveis para montar os 16 avos de Final.</p>
           <div class="flex flex-wrap gap-2 mb-4">
             <span v-for="t in settings.qualifiedTeams" :key="t" class="chip px-3 py-2 text-sm font-bold flex items-center gap-2">
               <span class="fi flag-ico" :class="'fi-' + bandeiraCode(t)"></span> {{ t }}
@@ -399,7 +399,7 @@
             <div v-for="m in jogos" :key="m.id" class="rounded-2xl bg-black/35 border border-white/8 p-4">
               <div class="grid grid-cols-[1fr_auto_1fr] gap-2 items-center">
                 <div class="text-center">
-                  <select v-if="user && user.isAdmin && fase === 'Oitavas de Final'" :value="m.teamA" @change="definirTimeChave(m, 'teamA', $event.target.value)" class="w-full rounded-xl bg-black/40 border border-white/10 px-2 py-2 text-sm font-bold outline-none focus:border-yellow-400/70">
+                  <select v-if="user && user.isAdmin && fase === '16 avos de Final'" :value="m.teamA" @change="definirTimeChave(m, 'teamA', $event.target.value)" class="w-full rounded-xl bg-black/40 border border-white/10 px-2 py-2 text-sm font-bold outline-none focus:border-yellow-400/70">
                     <option value="">A definir</option>
                     <option v-for="t in settings.qualifiedTeams" :key="t" :value="t">{{ t }}</option>
                   </select>
@@ -410,7 +410,7 @@
                   <span v-else>x</span>
                 </div>
                 <div class="text-center">
-                  <select v-if="user && user.isAdmin && fase === 'Oitavas de Final'" :value="m.teamB" @change="definirTimeChave(m, 'teamB', $event.target.value)" class="w-full rounded-xl bg-black/40 border border-white/10 px-2 py-2 text-sm font-bold outline-none focus:border-yellow-400/70">
+                  <select v-if="user && user.isAdmin && fase === '16 avos de Final'" :value="m.teamB" @change="definirTimeChave(m, 'teamB', $event.target.value)" class="w-full rounded-xl bg-black/40 border border-white/10 px-2 py-2 text-sm font-bold outline-none focus:border-yellow-400/70">
                     <option value="">A definir</option>
                     <option v-for="t in settings.qualifiedTeams" :key="t" :value="t">{{ t }}</option>
                   </select>
@@ -730,6 +730,20 @@
           <div class="bracket-wrap" ref="bracketWrap">
             <div class="bracket-host" :style="bracketHostStyle">
             <div class="bracket-tree" :style="bracketTreeStyle">
+              <div class="bracket-col col-16">
+                <div v-for="(par, idx) in bracketSides.left.dezesseis" :key="'es'+idx" class="bracket-link l small">
+                  <div v-for="m in par" :key="m.id" class="bracket-match">
+                    <div v-for="side in ['teamA', 'teamB']" :key="side" class="bracket-row" :class="bracketRowClass(m, side)">
+                      <template v-if="m[side]">
+                        <span><span class="fi flag-ico" :class="'fi-' + bandeiraCode(m[side])"></span> {{ m[side] }}</span>
+                        <span v-if="m.isFinished" class="bracket-score">{{ exibirPlacar(m['realScore' + side.slice(-1)]) }}</span>
+                      </template>
+                      <span v-else>⏳ Em breve</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div class="bracket-col">
                 <div v-for="(par, idx) in bracketSides.left.oitavas" :key="'eo'+idx" class="bracket-link l">
                   <div v-for="m in par" :key="m.id" class="bracket-match">
@@ -822,6 +836,20 @@
 
               <div class="bracket-col">
                 <div v-for="(par, idx) in bracketSides.right.oitavas" :key="'do'+idx" class="bracket-link r">
+                  <div v-for="m in par" :key="m.id" class="bracket-match">
+                    <div v-for="side in ['teamA', 'teamB']" :key="side" class="bracket-row" :class="bracketRowClass(m, side)">
+                      <template v-if="m[side]">
+                        <span><span class="fi flag-ico" :class="'fi-' + bandeiraCode(m[side])"></span> {{ m[side] }}</span>
+                        <span v-if="m.isFinished" class="bracket-score">{{ exibirPlacar(m['realScore' + side.slice(-1)]) }}</span>
+                      </template>
+                      <span v-else>⏳ Em breve</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="bracket-col col-16">
+                <div v-for="(par, idx) in bracketSides.right.dezesseis" :key="'ds'+idx" class="bracket-link r small">
                   <div v-for="m in par" :key="m.id" class="bracket-match">
                     <div v-for="side in ['teamA', 'teamB']" :key="side" class="bracket-row" :class="bracketRowClass(m, side)">
                       <template v-if="m[side]">

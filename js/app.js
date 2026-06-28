@@ -2,7 +2,7 @@ import { createApp } from 'vue';
 import { normalizeState } from './storage.js';
 import { calculateRanking } from './scoring.js';
 import { exportarBackup as downloadBackup, resizeImageToBase64, downloadCSV, parseCSV } from './utils.js';
-import { buildAllMatches, ALL_TEAMS, MATCH_DATES, TEAM_FLAGS, TEAM_FLAG_CODES, KNOCKOUT_PROGRESSION, getMatchWinner, getMatchLoser } from './config.js';
+import { buildAllMatches, ALL_TEAMS, MATCH_DATES, TEAM_FLAGS, TEAM_FLAG_CODES, KNOCKOUT_PROGRESSION, FASE_ORDER, getMatchWinner, getMatchLoser } from './config.js';
 
 const API = '/api';
 const TOKEN_KEY = 'bolao_token';
@@ -220,7 +220,7 @@ createApp({
     },
 
     chaveamentoPorFase() {
-      const fases = {};
+      const porGrupo = {};
       this.allMatches
         .filter(m => m.teamA === null && m.teamB === null)
         .forEach(catalogMatch => {
@@ -228,22 +228,32 @@ createApp({
             id: catalogMatch.id, group: catalogMatch.group, teamA: null, teamB: null,
             realScoreA: null, realScoreB: null, isFinished: false, isLive: false, penaltyWinner: null
           };
-          (fases[catalogMatch.group] ??= []).push(m);
+          (porGrupo[catalogMatch.group] ??= []).push(m);
         });
+
+      // Reordena as fases na sequência lógica (16 avos → final), já que os IDs
+      // dos 16 avos foram adicionados por último no catálogo.
+      const fases = {};
+      FASE_ORDER.forEach(fase => {
+        if (porGrupo[fase]) fases[fase] = porGrupo[fase];
+      });
       return fases;
     },
 
     bracketSides() {
+      const dezesseis = this.chaveamentoPorFase['16 avos de Final'] || [];
       const oitavas = this.chaveamentoPorFase['Oitavas de Final'];
       const quartas = this.chaveamentoPorFase['Quartas de Final'];
       const semi = this.chaveamentoPorFase['Semifinal'];
       return {
         left: {
+          dezesseis: [[dezesseis[0], dezesseis[1]], [dezesseis[2], dezesseis[3]], [dezesseis[4], dezesseis[5]], [dezesseis[6], dezesseis[7]]],
           oitavas: [[oitavas[0], oitavas[1]], [oitavas[2], oitavas[3]]],
           quartas: [[quartas[0], quartas[1]]],
           semi: semi[0]
         },
         right: {
+          dezesseis: [[dezesseis[8], dezesseis[9]], [dezesseis[10], dezesseis[11]], [dezesseis[12], dezesseis[13]], [dezesseis[14], dezesseis[15]]],
           oitavas: [[oitavas[4], oitavas[5]], [oitavas[6], oitavas[7]]],
           quartas: [[quartas[2], quartas[3]]],
           semi: semi[1]
@@ -255,8 +265,8 @@ createApp({
 
     bracketHostStyle() {
       return {
-        width: `${1250 * this.bracketScale}px`,
-        height: `${352 * this.bracketScale}px`
+        width: `${1600 * this.bracketScale}px`,
+        height: `${640 * this.bracketScale}px`
       };
     },
 
@@ -478,7 +488,7 @@ createApp({
       const wrap = this.$refs.bracketWrap;
       if (!wrap) return;
       const disponivel = wrap.clientWidth - 28;
-      this.bracketScale = Math.min(1, disponivel / 1250);
+      this.bracketScale = Math.min(1, disponivel / 1600);
     },
 
     adicionarTimeClassificado() {
