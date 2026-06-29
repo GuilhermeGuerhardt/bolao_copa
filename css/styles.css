@@ -695,3 +695,91 @@ input[type=number]::-webkit-outer-spin-button {
   border-top: 2px solid rgba(234, 179, 8, .6);
   pointer-events: none;
 }
+
+/* Coluna especial Final + 3º Lugar */
+.kmata-head-final {
+  color: #fde68a;
+  border-bottom-color: rgba(234, 179, 8, .8);
+}
+
+.kmata-finais-body {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding-top: 4px;
+}
+
+.kmata-final-outer {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.kmata-date-card {
+  font-size: 10.5px;
+  color: rgba(255, 255, 255, .4);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-left: 2px;
+}
+
+.kmata-final-card {
+  border: 1.5px solid rgba(234, 179, 8, .65);
+  background: rgba(234, 179, 8, .06);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.kmata-final-banner {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  background: rgba(234, 179, 8, .13);
+  border-bottom: 1px solid rgba(234, 179, 8, .25);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: #fde68a;
+}
+
+.kmata-final-inner {
+  display: flex;
+  align-items: stretch;
+}
+
+.kmata-final-card .kmata-team {
+  color: rgba(253, 230, 138, .9);
+}
+
+.kmata-final-card .kmata-ph {
+  color: rgba(253, 230, 138, .45);
+}
+
+.kmata-final-card .kmata-team + .kmata-team {
+  border-top-color: rgba(234, 179, 8, .15);
+}
+
+.kmata-final-card .kmata-score {
+  border-left-color: rgba(234, 179, 8, .2);
+}
+
+.kmata-terceiro-card {
+  border: 1px solid rgba(255, 255, 255, .09);
+  background: rgba(255, 255, 255, .025);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.kmata-terceiro-banner {
+  padding: 4px 10px;
+  background: rgba(255, 255, 255, .04);
+  border-bottom: 1px solid rgba(255, 255, 255, .07);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, .4);
+}

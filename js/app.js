@@ -280,8 +280,9 @@ createApp({
       // Da semifinal em diante não liga, para a linha não apontar para a coluna
       // de disputa de 3º lugar, que fica entre a semi e a final.
       const ligam = ['16 avos de Final', 'Oitavas de Final', 'Quartas de Final'];
+      const colunasEspeciais = ['Final', 'Disputa de 3º Lugar'];
       return FASE_ORDER
-        .filter(fase => this.chaveamentoPorFase[fase])
+        .filter(fase => this.chaveamentoPorFase[fase] && !colunasEspeciais.includes(fase))
         .map(fase => ({ fase, jogos: this.chaveamentoPorFase[fase], liga: ligam.includes(fase) }));
     },
 
