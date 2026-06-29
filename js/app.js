@@ -637,6 +637,50 @@ createApp({
       });
     },
 
+    exportarResultadosCSV() {
+      const finalizados = this.matches
+        .filter(m => m.isFinished && m.realScoreA !== null && m.realScoreB !== null)
+        .sort((a, b) => {
+          if (a.matchDate && b.matchDate && a.matchDate !== b.matchDate) return a.matchDate.localeCompare(b.matchDate);
+          return a.id - b.id;
+        });
+
+      const rows = [['Participante', 'Fase', 'Jogo', 'Data', 'Palpite', 'Resultado', 'Pontos', 'Total parcial']];
+
+      this.ranking.forEach(rank => {
+        let total = 0;
+        finalizados.forEach(match => {
+          const pred = this.predictions.find(p => p.matchId === match.id && p.participant === rank.name);
+          const realA = Number(match.realScoreA);
+          const realB = Number(match.realScoreB);
+          let pontos = 0;
+          let palpite = 'Sem palpite';
+
+          if (pred && pred.scoreA !== null && pred.scoreB !== null) {
+            const predA = Number(pred.scoreA);
+            const predB = Number(pred.scoreB);
+            palpite = `${predA} x ${predB}`;
+            if (predA === realA && predB === realB) pontos = 3;
+            else if (Math.sign(predA - predB) === Math.sign(realA - realB)) pontos = 1;
+          }
+
+          total += pontos;
+          rows.push([
+            rank.name,
+            match.group,
+            `${match.teamA || '?'} x ${match.teamB || '?'}`,
+            match.matchDate ? this.formatarData(match.matchDate) : '',
+            palpite,
+            `${realA} x ${realB}`,
+            pontos,
+            total
+          ]);
+        });
+      });
+
+      downloadCSV('resultados-bolao.csv', rows);
+    },
+
     async restaurarBackup(e) {
       const file = e.target.files?.[0];
       e.target.value = '';

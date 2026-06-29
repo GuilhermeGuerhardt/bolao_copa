@@ -792,7 +792,10 @@
                   <h3 class="text-xl text-yellow-300">Ranking geral</h3>
                   <p class="text-sm subtle-text">Classificação completa do bolão.</p>
                 </div>
-                <span class="chip px-3 py-1 text-xs font-bold">{{ ranking.length }} nomes</span>
+                <div class="flex items-center gap-2">
+                  <span class="chip px-3 py-1 text-xs font-bold">{{ ranking.length }} nomes</span>
+                  <button @click="exportarResultadosCSV" :disabled="!totalFinishedMatches" class="px-3 py-1 rounded-xl bg-white/10 hover:bg-white/20 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-xs transition-colors">📊 Exportar CSV</button>
+                </div>
               </div>
               <div class="ranking-scroll">
                 <div v-for="(rank, index) in ranking" :key="rank.name" class="rank-row" :class="index < 3 ? 'bg-white/[0.03]' : ''">
