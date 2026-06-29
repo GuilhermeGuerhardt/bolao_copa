@@ -533,50 +533,54 @@
               <div class="kmata-col kmata-col-finais" v-if="chaveamentoPorFase['Final']">
                 <div class="kmata-head kmata-head-final">Final</div>
                 <div class="kmata-finais-body">
-                  <div class="kmata-final-outer">
-                    <p class="kmata-date-card" v-if="dataHoraJogo(chaveamentoPorFase['Final'][0])">{{ dataHoraJogo(chaveamentoPorFase['Final'][0]) }}</p>
-                    <div class="kmata-final-card">
-                      <div class="kmata-final-banner">🏆 <span>Final</span></div>
-                      <div class="kmata-final-inner">
-                        <div class="kmata-rows">
-                          <div v-for="side in ['teamA','teamB']" :key="side" class="kmata-team" :class="bracketRowClass(chaveamentoPorFase['Final'][0], side)">
-                            <template v-if="textoSlot(chaveamentoPorFase['Final'][0], side).team">
-                              <span class="fi flag-ico kmata-flag" :class="'fi-' + bandeiraCode(textoSlot(chaveamentoPorFase['Final'][0], side).team)"></span>
-                              <span class="kmata-name">{{ textoSlot(chaveamentoPorFase['Final'][0], side).team }}</span>
-                            </template>
-                            <template v-else>
-                              <span class="kmata-shield"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l8 3v6c0 5-3.5 8-8 11-4.5-3-8-6-8-11V5l8-3z"/></svg></span>
-                              <span class="kmata-name kmata-ph">{{ textoSlot(chaveamentoPorFase['Final'][0], side).placeholder }}</span>
-                            </template>
+                  <div class="kmata-finais-slot">
+                    <div class="kmata-final-outer">
+                      <p class="kmata-date-card" v-if="dataHoraJogo(chaveamentoPorFase['Final'][0])">{{ dataHoraJogo(chaveamentoPorFase['Final'][0]) }}</p>
+                      <div class="kmata-final-card">
+                        <div class="kmata-final-banner">🏆 <span>Final</span></div>
+                        <div class="kmata-final-inner">
+                          <div class="kmata-rows">
+                            <div v-for="side in ['teamA','teamB']" :key="side" class="kmata-team" :class="bracketRowClass(chaveamentoPorFase['Final'][0], side)">
+                              <template v-if="textoSlot(chaveamentoPorFase['Final'][0], side).team">
+                                <span class="fi flag-ico kmata-flag" :class="'fi-' + bandeiraCode(textoSlot(chaveamentoPorFase['Final'][0], side).team)"></span>
+                                <span class="kmata-name">{{ textoSlot(chaveamentoPorFase['Final'][0], side).team }}</span>
+                              </template>
+                              <template v-else>
+                                <span class="kmata-shield"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l8 3v6c0 5-3.5 8-8 11-4.5-3-8-6-8-11V5l8-3z"/></svg></span>
+                                <span class="kmata-name kmata-ph">{{ textoSlot(chaveamentoPorFase['Final'][0], side).placeholder }}</span>
+                              </template>
+                            </div>
                           </div>
-                        </div>
-                        <div class="kmata-score">
-                          <span :class="bracketRowClass(chaveamentoPorFase['Final'][0], 'teamA')">{{ chaveamentoPorFase['Final'][0].isFinished ? exibirPlacar(chaveamentoPorFase['Final'][0].realScoreA) : '' }}</span>
-                          <span :class="bracketRowClass(chaveamentoPorFase['Final'][0], 'teamB')">{{ chaveamentoPorFase['Final'][0].isFinished ? exibirPlacar(chaveamentoPorFase['Final'][0].realScoreB) : '' }}</span>
+                          <div class="kmata-score">
+                            <span :class="bracketRowClass(chaveamentoPorFase['Final'][0], 'teamA')">{{ chaveamentoPorFase['Final'][0].isFinished ? exibirPlacar(chaveamentoPorFase['Final'][0].realScoreA) : '' }}</span>
+                            <span :class="bracketRowClass(chaveamentoPorFase['Final'][0], 'teamB')">{{ chaveamentoPorFase['Final'][0].isFinished ? exibirPlacar(chaveamentoPorFase['Final'][0].realScoreB) : '' }}</span>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                  <div class="kmata-final-outer" v-if="chaveamentoPorFase['Disputa de 3º Lugar']">
-                    <p class="kmata-date-card" v-if="dataHoraJogo(chaveamentoPorFase['Disputa de 3º Lugar'][0])">{{ dataHoraJogo(chaveamentoPorFase['Disputa de 3º Lugar'][0]) }}</p>
-                    <div class="kmata-terceiro-card">
-                      <div class="kmata-terceiro-banner">Disputa de 3º lugar</div>
-                      <div class="kmata-final-inner">
-                        <div class="kmata-rows">
-                          <div v-for="side in ['teamA','teamB']" :key="side" class="kmata-team" :class="bracketRowClass(chaveamentoPorFase['Disputa de 3º Lugar'][0], side)">
-                            <template v-if="textoSlot(chaveamentoPorFase['Disputa de 3º Lugar'][0], side).team">
-                              <span class="fi flag-ico kmata-flag" :class="'fi-' + bandeiraCode(textoSlot(chaveamentoPorFase['Disputa de 3º Lugar'][0], side).team)"></span>
-                              <span class="kmata-name">{{ textoSlot(chaveamentoPorFase['Disputa de 3º Lugar'][0], side).team }}</span>
-                            </template>
-                            <template v-else>
-                              <span class="kmata-shield"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l8 3v6c0 5-3.5 8-8 11-4.5-3-8-6-8-11V5l8-3z"/></svg></span>
-                              <span class="kmata-name kmata-ph">{{ textoSlot(chaveamentoPorFase['Disputa de 3º Lugar'][0], side).placeholder }}</span>
-                            </template>
+                  <div class="kmata-finais-slot" v-if="chaveamentoPorFase['Disputa de 3º Lugar']">
+                    <div class="kmata-final-outer">
+                      <p class="kmata-date-card" v-if="dataHoraJogo(chaveamentoPorFase['Disputa de 3º Lugar'][0])">{{ dataHoraJogo(chaveamentoPorFase['Disputa de 3º Lugar'][0]) }}</p>
+                      <div class="kmata-terceiro-card">
+                        <div class="kmata-terceiro-banner">Disputa de 3º lugar</div>
+                        <div class="kmata-final-inner">
+                          <div class="kmata-rows">
+                            <div v-for="side in ['teamA','teamB']" :key="side" class="kmata-team" :class="bracketRowClass(chaveamentoPorFase['Disputa de 3º Lugar'][0], side)">
+                              <template v-if="textoSlot(chaveamentoPorFase['Disputa de 3º Lugar'][0], side).team">
+                                <span class="fi flag-ico kmata-flag" :class="'fi-' + bandeiraCode(textoSlot(chaveamentoPorFase['Disputa de 3º Lugar'][0], side).team)"></span>
+                                <span class="kmata-name">{{ textoSlot(chaveamentoPorFase['Disputa de 3º Lugar'][0], side).team }}</span>
+                              </template>
+                              <template v-else>
+                                <span class="kmata-shield"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l8 3v6c0 5-3.5 8-8 11-4.5-3-8-6-8-11V5l8-3z"/></svg></span>
+                                <span class="kmata-name kmata-ph">{{ textoSlot(chaveamentoPorFase['Disputa de 3º Lugar'][0], side).placeholder }}</span>
+                              </template>
+                            </div>
                           </div>
-                        </div>
-                        <div class="kmata-score">
-                          <span :class="bracketRowClass(chaveamentoPorFase['Disputa de 3º Lugar'][0], 'teamA')">{{ chaveamentoPorFase['Disputa de 3º Lugar'][0].isFinished ? exibirPlacar(chaveamentoPorFase['Disputa de 3º Lugar'][0].realScoreA) : '' }}</span>
-                          <span :class="bracketRowClass(chaveamentoPorFase['Disputa de 3º Lugar'][0], 'teamB')">{{ chaveamentoPorFase['Disputa de 3º Lugar'][0].isFinished ? exibirPlacar(chaveamentoPorFase['Disputa de 3º Lugar'][0].realScoreB) : '' }}</span>
+                          <div class="kmata-score">
+                            <span :class="bracketRowClass(chaveamentoPorFase['Disputa de 3º Lugar'][0], 'teamA')">{{ chaveamentoPorFase['Disputa de 3º Lugar'][0].isFinished ? exibirPlacar(chaveamentoPorFase['Disputa de 3º Lugar'][0].realScoreA) : '' }}</span>
+                            <span :class="bracketRowClass(chaveamentoPorFase['Disputa de 3º Lugar'][0], 'teamB')">{{ chaveamentoPorFase['Disputa de 3º Lugar'][0].isFinished ? exibirPlacar(chaveamentoPorFase['Disputa de 3º Lugar'][0].realScoreB) : '' }}</span>
+                          </div>
                         </div>
                       </div>
                     </div>
