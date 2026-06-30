@@ -1091,5 +1091,6 @@ function normalizePrediction(p) {
     participant: p.participant,
     scoreA: p.scoreA ?? null,
     scoreB: p.scoreB ?? null,
+    predPenaltyWinner: p.predPenaltyWinner ?? null,
   };
 }
