@@ -163,6 +163,12 @@ createApp({
             } else if (Math.sign(predA - predB) === Math.sign(realA - realB)) {
               pontosRodada[pred.participant] += 1;
             }
+            if (match.penaltyWinner) {
+              const winnerTeam = match.penaltyWinner === 'A' ? match.teamA : match.teamB;
+              if (pred.predPenaltyWinner && pred.predPenaltyWinner === winnerTeam) {
+                pontosRodada[pred.participant] += 1;
+              }
+            }
           });
       });
 
@@ -663,6 +669,11 @@ createApp({
             palpite = `${predA} x ${predB}`;
             if (predA === realA && predB === realB) pontos = 3;
             else if (Math.sign(predA - predB) === Math.sign(realA - realB)) pontos = 1;
+            if (match.penaltyWinner) {
+              const winnerTeam = match.penaltyWinner === 'A' ? match.teamA : match.teamB;
+              if (pred.predPenaltyWinner && pred.predPenaltyWinner === winnerTeam) pontos += 1;
+              if (pred.predPenaltyWinner) palpite += ` (pên: ${pred.predPenaltyWinner})`;
+            }
           }
 
           total += pontos;
