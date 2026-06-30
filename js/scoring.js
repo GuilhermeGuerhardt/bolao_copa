@@ -28,6 +28,13 @@ export function calculateRanking(participants, matches, predictions, settings = 
           } else if (Math.sign(predA - predB) === Math.sign(realA - realB)) {
             scores[pred.participant].points += 1;
           }
+
+          if (match.penaltyWinner) {
+            const winnerTeam = match.penaltyWinner === 'A' ? match.teamA : match.teamB;
+            if (pred.predPenaltyWinner && pred.predPenaltyWinner === winnerTeam) {
+              scores[pred.participant].points += 1;
+            }
+          }
         });
     });
 

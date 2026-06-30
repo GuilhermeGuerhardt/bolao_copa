@@ -80,7 +80,8 @@ createApp({
           matchId: this.selectedMatchId,
           participant: participant.name,
           scoreA: null,
-          scoreB: null
+          scoreB: null,
+          predPenaltyWinner: null
         };
       });
     },
@@ -977,12 +978,13 @@ createApp({
 
       const scoreA = field === 'scoreA' ? value : pred.scoreA;
       const scoreB = field === 'scoreB' ? value : pred.scoreB;
+      const predPenaltyWinner = field === 'predPenaltyWinner' ? value : pred.predPenaltyWinner;
 
       try {
         const res = await fetch(`${API}/admin/predictions`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json', ...this.authHeaders() },
-          body: JSON.stringify({ matchId, participant: pred.participant, scoreA, scoreB })
+          body: JSON.stringify({ matchId, participant: pred.participant, scoreA, scoreB, predPenaltyWinner })
         });
         if (!res.ok) return;
         const data = await res.json();

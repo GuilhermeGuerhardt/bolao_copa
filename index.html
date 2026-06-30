@@ -684,34 +684,58 @@
 
               <div class="flex flex-col gap-2">
                 <div v-for="pred in activeMatchPredictions" :key="pred.participant"
-                  v-memo="[pred.scoreA, pred.scoreB, user && user.isAdmin, activeMatch && activeMatch.teamA, activeMatch && activeMatch.teamB, rodadaDestaque && rodadaDestaque.campeoes.includes(pred.participant), rodadaDestaque && rodadaDestaque.bagres.includes(pred.participant)]"
+                  v-memo="[pred.scoreA, pred.scoreB, pred.predPenaltyWinner, user && user.isAdmin, activeMatch && activeMatch.teamA, activeMatch && activeMatch.teamB, rodadaDestaque && rodadaDestaque.campeoes.includes(pred.participant), rodadaDestaque && rodadaDestaque.bagres.includes(pred.participant)]"
                   class="rounded-2xl p-2 border bg-gradient-to-b from-white/[0.08] to-white/[0.03] shadow-xl flex items-center justify-between gap-3"
                   :class="rodadaDestaque && rodadaDestaque.campeoes.includes(pred.participant) ? 'border-yellow-400/60' : (rodadaDestaque && rodadaDestaque.bagres.includes(pred.participant) ? 'border-red-400/40' : 'border-white/8')">
                   <div class="min-w-0">
                     <p class="text-yellow-300 font-black leading-tight text-sm md:text-base truncate">{{ pred.participant }}</p>
                     <p class="text-[11px] subtle-text">Palpite enviado</p>
                   </div>
-                  <div v-if="user && user.isAdmin" class="flex items-center gap-2 shrink-0">
-                    <span class="hidden sm:inline fi flag-ico text-lg" :class="'fi-' + bandeiraCode(activeMatch.teamA)"></span>
-                    <input type="number" min="0" max="99" :value="pred.scoreA"
-                      @focus="editingPalpiteCount++"
-                      @blur="editingPalpiteCount--"
-                      @change="salvarPalpiteAdmin(pred, 'scoreA', $event.target.value)"
-                      class="score-box !min-w-[56px] !min-h-[52px] !text-xl text-center bg-black/40 border border-yellow-400/25 rounded-2xl outline-none focus:border-yellow-400/70 text-white">
-                    <span class="text-yellow-400 font-black">X</span>
-                    <input type="number" min="0" max="99" :value="pred.scoreB"
-                      @focus="editingPalpiteCount++"
-                      @blur="editingPalpiteCount--"
-                      @change="salvarPalpiteAdmin(pred, 'scoreB', $event.target.value)"
-                      class="score-box !min-w-[56px] !min-h-[52px] !text-xl text-center bg-black/40 border border-yellow-400/25 rounded-2xl outline-none focus:border-yellow-400/70 text-white">
-                    <span class="hidden sm:inline fi flag-ico text-lg" :class="'fi-' + bandeiraCode(activeMatch.teamB)"></span>
+                  <div v-if="user && user.isAdmin" class="flex flex-col items-end gap-1 shrink-0">
+                    <div class="flex items-center gap-2">
+                      <span class="hidden sm:inline fi flag-ico text-lg" :class="'fi-' + bandeiraCode(activeMatch.teamA)"></span>
+                      <input type="number" min="0" max="99" :value="pred.scoreA"
+                        @focus="editingPalpiteCount++"
+                        @blur="editingPalpiteCount--"
+                        @change="salvarPalpiteAdmin(pred, 'scoreA', $event.target.value)"
+                        class="score-box !min-w-[56px] !min-h-[52px] !text-xl text-center bg-black/40 border border-yellow-400/25 rounded-2xl outline-none focus:border-yellow-400/70 text-white">
+                      <span class="text-yellow-400 font-black">X</span>
+                      <input type="number" min="0" max="99" :value="pred.scoreB"
+                        @focus="editingPalpiteCount++"
+                        @blur="editingPalpiteCount--"
+                        @change="salvarPalpiteAdmin(pred, 'scoreB', $event.target.value)"
+                        class="score-box !min-w-[56px] !min-h-[52px] !text-xl text-center bg-black/40 border border-yellow-400/25 rounded-2xl outline-none focus:border-yellow-400/70 text-white">
+                      <span class="hidden sm:inline fi flag-ico text-lg" :class="'fi-' + bandeiraCode(activeMatch.teamB)"></span>
+                    </div>
+                    <div v-if="activeMatch && !activeMatch.group.startsWith('Grupo')" class="flex items-center gap-1">
+                      <span class="text-[10px] text-gray-500">pên:</span>
+                      <button @click="salvarPalpiteAdmin(pred, 'predPenaltyWinner', pred.predPenaltyWinner === activeMatch.teamA ? null : activeMatch.teamA)"
+                        class="flex items-center gap-1 px-2 py-0.5 rounded-lg border text-[11px] transition-colors"
+                        :class="pred.predPenaltyWinner === activeMatch.teamA ? 'bg-yellow-400/20 border-yellow-400/60 text-yellow-300' : 'bg-white/5 border-white/15 text-gray-400 hover:border-white/30'">
+                        <span class="fi flag-ico text-sm" :class="'fi-' + bandeiraCode(activeMatch.teamA)"></span>
+                        <span class="hidden sm:inline max-w-[60px] truncate">{{ activeMatch.teamA }}</span>
+                      </button>
+                      <button @click="salvarPalpiteAdmin(pred, 'predPenaltyWinner', pred.predPenaltyWinner === activeMatch.teamB ? null : activeMatch.teamB)"
+                        class="flex items-center gap-1 px-2 py-0.5 rounded-lg border text-[11px] transition-colors"
+                        :class="pred.predPenaltyWinner === activeMatch.teamB ? 'bg-yellow-400/20 border-yellow-400/60 text-yellow-300' : 'bg-white/5 border-white/15 text-gray-400 hover:border-white/30'">
+                        <span class="fi flag-ico text-sm" :class="'fi-' + bandeiraCode(activeMatch.teamB)"></span>
+                        <span class="hidden sm:inline max-w-[60px] truncate">{{ activeMatch.teamB }}</span>
+                      </button>
+                    </div>
                   </div>
-                  <div v-else class="flex items-center gap-2 shrink-0">
-                    <span class="hidden sm:inline fi flag-ico text-lg" :class="'fi-' + bandeiraCode(activeMatch.teamA)"></span>
-                    <div class="score-box !min-w-[56px] !min-h-[52px] !text-xl">{{ exibirPlacar(pred.scoreA) }}</div>
-                    <span class="text-yellow-400 font-black">X</span>
-                    <div class="score-box !min-w-[56px] !min-h-[52px] !text-xl">{{ exibirPlacar(pred.scoreB) }}</div>
-                    <span class="hidden sm:inline fi flag-ico text-lg" :class="'fi-' + bandeiraCode(activeMatch.teamB)"></span>
+                  <div v-else class="flex flex-col items-end gap-1 shrink-0">
+                    <div class="flex items-center gap-2">
+                      <span class="hidden sm:inline fi flag-ico text-lg" :class="'fi-' + bandeiraCode(activeMatch.teamA)"></span>
+                      <div class="score-box !min-w-[56px] !min-h-[52px] !text-xl">{{ exibirPlacar(pred.scoreA) }}</div>
+                      <span class="text-yellow-400 font-black">X</span>
+                      <div class="score-box !min-w-[56px] !min-h-[52px] !text-xl">{{ exibirPlacar(pred.scoreB) }}</div>
+                      <span class="hidden sm:inline fi flag-ico text-lg" :class="'fi-' + bandeiraCode(activeMatch.teamB)"></span>
+                    </div>
+                    <div v-if="activeMatch && !activeMatch.group.startsWith('Grupo') && pred.predPenaltyWinner" class="flex items-center gap-1 text-[10px] text-gray-500">
+                      <span>pên:</span>
+                      <span class="fi flag-ico" :class="'fi-' + bandeiraCode(pred.predPenaltyWinner)"></span>
+                      <span>{{ pred.predPenaltyWinner }}</span>
+                    </div>
                   </div>
                 </div>
               </div>

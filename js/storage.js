@@ -39,7 +39,8 @@ export function normalizeState(raw) {
           matchId: Number(p.matchId),
           participant: String(p.participant),
           scoreA: toNullableNumber(p.scoreA),
-          scoreB: toNullableNumber(p.scoreB)
+          scoreB: toNullableNumber(p.scoreB),
+          predPenaltyWinner: p.predPenaltyWinner ?? null
         }))
     : [];
 

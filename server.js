@@ -88,6 +88,7 @@ async function initDb() {
     ALTER TABLE bolao_matches ADD COLUMN IF NOT EXISTS "matchDate" TEXT;
     ALTER TABLE bolao_matches ADD COLUMN IF NOT EXISTS "matchTime" TEXT;
     ALTER TABLE bolao_matches ADD COLUMN IF NOT EXISTS "penaltyWinner" TEXT;
+    ALTER TABLE bolao_predictions ADD COLUMN IF NOT EXISTS "predPenaltyWinner" TEXT;
     ALTER TABLE bolao_matches ALTER COLUMN "teamA" DROP NOT NULL;
     ALTER TABLE bolao_matches ALTER COLUMN "teamB" DROP NOT NULL;
 
@@ -529,14 +530,16 @@ app.post("/api/admin/restore", authMiddleware, adminMiddleware, async (req, res)
 
         const placarA = pred.scoreA === null || pred.scoreA === undefined || pred.scoreA === "" ? null : Number(pred.scoreA);
         const placarB = pred.scoreB === null || pred.scoreB === undefined || pred.scoreB === "" ? null : Number(pred.scoreB);
+        const ppw = typeof pred.predPenaltyWinner === 'string' && pred.predPenaltyWinner ? pred.predPenaltyWinner : null;
 
         await client.query(
-          `INSERT INTO bolao_predictions ("matchId", participant, "scoreA", "scoreB")
-           VALUES ($1, $2, $3, $4)
+          `INSERT INTO bolao_predictions ("matchId", participant, "scoreA", "scoreB", "predPenaltyWinner")
+           VALUES ($1, $2, $3, $4, $5)
            ON CONFLICT ("matchId", participant) DO UPDATE SET
              "scoreA" = EXCLUDED."scoreA",
-             "scoreB" = EXCLUDED."scoreB"`,
-          [pMatchId, nome, placarA, placarB]
+             "scoreB" = EXCLUDED."scoreB",
+             "predPenaltyWinner" = EXCLUDED."predPenaltyWinner"`,
+          [pMatchId, nome, placarA, placarB, ppw]
         );
       }
 
@@ -798,7 +801,7 @@ app.put("/api/settings/special", authMiddleware, adminMiddleware, async (req, re
 
 app.put("/api/admin/predictions", authMiddleware, adminMiddleware, async (req, res) => {
   try {
-    const { matchId, participant, scoreA, scoreB } = req.body || {};
+    const { matchId, participant, scoreA, scoreB, predPenaltyWinner } = req.body || {};
 
     const id = Number(matchId);
     if (!Number.isInteger(id)) {
@@ -823,18 +826,20 @@ app.put("/api/admin/predictions", authMiddleware, adminMiddleware, async (req, r
 
     const placarA = scoreA === null || scoreA === undefined || scoreA === "" ? null : Number(scoreA);
     const placarB = scoreB === null || scoreB === undefined || scoreB === "" ? null : Number(scoreB);
+    const ppw = typeof predPenaltyWinner === 'string' && predPenaltyWinner ? predPenaltyWinner : null;
 
     await query(
-      `INSERT INTO bolao_predictions ("matchId", participant, "scoreA", "scoreB")
-       VALUES ($1, $2, $3, $4)
+      `INSERT INTO bolao_predictions ("matchId", participant, "scoreA", "scoreB", "predPenaltyWinner")
+       VALUES ($1, $2, $3, $4, $5)
        ON CONFLICT ("matchId", participant) DO UPDATE SET
          "scoreA" = EXCLUDED."scoreA",
-         "scoreB" = EXCLUDED."scoreB"`,
-      [match.id, part.name, placarA, placarB]
+         "scoreB" = EXCLUDED."scoreB",
+         "predPenaltyWinner" = EXCLUDED."predPenaltyWinner"`,
+      [match.id, part.name, placarA, placarB, ppw]
     );
 
     broadcastUpdate();
-    res.json({ ok: true, participant: part.name, matchId: match.id, prediction: { scoreA: placarA, scoreB: placarB } });
+    res.json({ ok: true, participant: part.name, matchId: match.id, prediction: { scoreA: placarA, scoreB: placarB, predPenaltyWinner: ppw } });
   } catch (e) {
     console.error("PUT /api/admin/predictions", e);
     res.status(500).json({ erro: "Erro ao salvar palpite." });
@@ -884,14 +889,16 @@ app.put("/api/admin/predictions/bulk", authMiddleware, adminMiddleware, async (r
 
         const placarA = item.scoreA === null || item.scoreA === undefined || item.scoreA === "" ? null : Number(item.scoreA);
         const placarB = item.scoreB === null || item.scoreB === undefined || item.scoreB === "" ? null : Number(item.scoreB);
+        const ppw = typeof item.predPenaltyWinner === 'string' && item.predPenaltyWinner ? item.predPenaltyWinner : null;
 
         await client.query(
-          `INSERT INTO bolao_predictions ("matchId", participant, "scoreA", "scoreB")
-           VALUES ($1, $2, $3, $4)
+          `INSERT INTO bolao_predictions ("matchId", participant, "scoreA", "scoreB", "predPenaltyWinner")
+           VALUES ($1, $2, $3, $4, $5)
            ON CONFLICT ("matchId", participant) DO UPDATE SET
              "scoreA" = EXCLUDED."scoreA",
-             "scoreB" = EXCLUDED."scoreB"`,
-          [id, nome, placarA, placarB]
+             "scoreB" = EXCLUDED."scoreB",
+             "predPenaltyWinner" = EXCLUDED."predPenaltyWinner"`,
+          [id, nome, placarA, placarB, ppw]
         );
         updated++;
       }
